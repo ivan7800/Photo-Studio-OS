@@ -1,35 +1,19 @@
-# Photo Studio OS v1.4 — AI Photography Director Suite
+# Photo Studio OS v1.3 — AI Photography Director Suite
 
 Estudio fotográfico web, offline-first y listo para GitHub Pages para diseñar prompts profesionales de fotografía IA.
 
-## Enfoque v1.4
+## Enfoque v1.3
 
-La app mantiene la identidad general de **Photo Studio OS** y añade una capa importante de coherencia UX: **ropa contextual según el tipo de sujeto**.
-
-Cuando eliges un sujeto femenino, masculino, no binario, corporativo, artista o senior, la app adapta automáticamente:
-
-- Categorías de ropa visibles.
-- Opciones de outfit.
-- Calzado.
-- Joyería y complementos.
-- Legwear / calcetería.
-- Texto de ayuda contextual.
-
-Así se evita el problema de seleccionar “modelo masculino adulto” y encontrar solo vestidos, lencería o medias como opciones principales.
-
-## Áreas cubiertas
+La app deja de presentarse como herramienta de nicho para “mujeres maduras” y pasa a ser una suite general:
 
 - Portrait
 - Fashion
 - Editorial
 - Lifestyle
 - Beauty
-- Menswear
-- Corporate portrait
 - Commercial
 - Sportswear
-- Resort / swim
-- Senior Photography como especialidad interna
+- Senior Photography como preset especializado
 - Pipeline, analítica, A/B testing y biblioteca de resultados
 
 ## Seguridad
@@ -60,3 +44,14 @@ npm test
 ## GitHub Pages
 
 Sube el contenido de esta carpeta a la raíz del repositorio y activa GitHub Pages desde `Settings → Pages`.
+
+
+## Estado v1.5
+
+Esta es la versión recomendada para GitHub Pages. El proyecto está preparado como estudio fotográfico general, con ropa contextual por tipo de sujeto y sin presentar el producto como un nicho de un solo perfil.
+
+### Límites conocidos
+
+- Para un producto comercial 10/10, lo ideal sería añadir backend/proxy para proteger API keys.
+- La prueba final en iPhone Safari y Android Chrome debe hacerse en dispositivo real.
+- Los tests E2E cubren smoke y flujo masculino básico; se pueden ampliar con regresión visual.

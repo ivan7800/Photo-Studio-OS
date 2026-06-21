@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded',bindDeclarativeEvents);
 
 
 /* ══════════════════════════════════════════════════
-   PHOTO STUDIO OS v1.4 — CORE ENGINE (CONTEXTUAL WARDROBE)
+   PHOTO STUDIO OS v1.5 — CORE ENGINE (POLISHED CONTEXTUAL WARDROBE)
 ══════════════════════════════════════════════════ */
 let activeCat='cotidiana';
 let outputLang='es';
@@ -121,7 +121,7 @@ const CAT_LABELS_DEFAULT={
 const CAT_LABELS_FEMALE={
   cotidiana:'🏠 Casa · Cotidiana',
   gala:'✨ Gala · Fiesta',
-  lenceria:'🌹 Lencería editorial',
+  lenceria:'🧥 Intimates editorial',
   disfraz:'🎭 Disfraces',
   banyo:'🏖️ Baño · Playa',
   deporte:'⚡ Deportivo'
@@ -191,8 +191,8 @@ function setLegSectionTitle(text){
 function setWardrobeHint(ctx){
   const hint=el('wardrobeContextHint'); if(!hint) return;
   const messages={
-    female:'Modo femenino: vestidos, lencería editorial, swimwear y medias disponibles como categorías especializadas.',
-    male:'Modo masculino: se sustituyen vestidos/lencería por menswear, tailoring, layering, barber, fitness y resort masculino.',
+    female:'Modo femenino: vestidos, layering/intimates editorial, swimwear y medias disponibles como categorías especializadas.',
+    male:'Modo masculino: se sustituyen prendas femeninas de nicho por menswear, tailoring, layering, barber, fitness y resort masculino.',
     neutral:'Modo neutro: moda adulta general, andrógina, minimalista y editorial sin sesgo femenino.',
     corporate:'Modo corporativo: business wear, executive portrait, calzado formal y accesorios profesionales.',
     creative:'Modo artista: styling contemporáneo, experimental, editorial y escénico.',
@@ -833,7 +833,7 @@ const DALLE_REMAP = [
   [/erótic[ao]/gi, 'editorial'],
 
   // Lencería vocabulary
-  [/lencería/gi, 'luxury lingerie fashion'],
+  [/lencería|intimates editorial|layering editorial/gi, 'luxury fashion layering'],
   [/bodysuit de encaje/gi, 'lace bodysuit fashion editorial'],
   [/bodysuit de satén/gi, 'satin bodysuit editorial'],
   [/bodysuit floral de encaje semitransparente/gi, 'sheer floral lace bodysuit editorial'],
@@ -900,14 +900,14 @@ function analyzeFilterRisk() {
   if (sensual === 'high') risks.push({ lvl: 2, msg: 'Intensidad editorial alta → puede activar filtros de imagen' });
   else if (sensual === 'medium') risks.push({ lvl: 1, msg: 'Intensidad editorial media → revisar styling y lenguaje' });
 
-  if (cat === 'lenceria') risks.push({ lvl: 2, msg: 'Categoría Lencería → términos de prenda activarán filtro directo' });
+  if (cat === 'lenceria') risks.push({ lvl: 1, msg: 'Categoría Layering/Intimates → revisar vocabulario si se usa DALL·E' });
 
   if (legtype.includes('rejilla') || legtype.includes('red')) risks.push({ lvl: 1, msg: 'Medias de rejilla/red → marcador frecuente en DALL·E' });
   if (legtype.includes('thigh-high') && sensual !== 'off') risks.push({ lvl: 1, msg: 'Thigh-high + intensidad editorial → combinación de riesgo medio' });
   if (legtype.includes('costura trasera') || legtype.includes('banda de silicona')) risks.push({ lvl: 1, msg: 'Medias con costura/silicona → vocabulario específico puede activar filtro' });
 
   if (action.includes('inclinada hacia cámara') || action.includes('labios entreabiertos')) risks.push({ lvl: 1, msg: 'Pose o expresión detectada como editorial por DALL·E' });
-  if (action.includes('boca abajo') || action.includes('felina')) risks.push({ lvl: 1, msg: 'Pose de suelo → riesgo moderado si hay lencería activa' });
+  if (action.includes('boca abajo') || action.includes('felina')) risks.push({ lvl: 1, msg: 'Pose de suelo → riesgo moderado si hay styling íntimo activo' });
 
   if (safe === 'off' && risks.length > 0) risks.push({ lvl: 1, msg: 'Sin cláusula de seguridad → añadir "Suave" o "Estricto" reduce rechazos' });
 
@@ -2462,7 +2462,7 @@ function renderPresets(){
   filtered.sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
   if(!filtered.length){t.innerHTML='<span data-u-style="u024">Sin resultados.</span>';return;}
   const tagCls={cotidiana:'pcard-tag-cotidiana',gala:'pcard-tag-gala',lenceria:'pcard-tag-lenceria',disfraz:'pcard-tag-disfraz',banyo:'pcard-tag-banyo',deporte:'pcard-tag-deporte'};
-  const tagLabel={cotidiana:'cotidiana',gala:'gala',lenceria:'lencería',disfraz:'disfraz',banyo:'baño',deporte:'deporte'};
+  const tagLabel={cotidiana:'cotidiana',gala:'gala',lenceria:'layering',disfraz:'disfraz',banyo:'baño',deporte:'deporte'};
   t.innerHTML=`<div class="pcards">${filtered.map((p)=>{
     const realIdx=list.indexOf(p);
     const cat=p.state&&p.state.cat||'';

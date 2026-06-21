@@ -41,3 +41,9 @@ test('adapta ropa al seleccionar modelo masculino adulto', async ({ page }) => {
   expect(prompt.toLowerCase()).not.toContain('vestido ajustado tipo bodycon');
   expect(prompt.toLowerCase()).not.toContain('medias thigh-high');
 });
+
+
+test('default UI uses general wardrobe wording', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /Layering editorial/i })).toBeVisible();
+});
