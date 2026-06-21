@@ -1,20 +1,6 @@
-# Photo Studio OS v1.3 — AI Photography Director Suite
+# Photo Studio OS v1.5 — AI Photography Director Suite
 
 Estudio fotográfico web, offline-first y listo para GitHub Pages para diseñar prompts profesionales de fotografía IA.
-
-## Enfoque v1.3
-
-La app deja de presentarse como herramienta de nicho para “mujeres maduras” y pasa a ser una suite general:
-
-- Portrait
-- Fashion
-- Editorial
-- Lifestyle
-- Beauty
-- Commercial
-- Sportswear
-- Senior Photography como preset especializado
-- Pipeline, analítica, A/B testing y biblioteca de resultados
 
 ## Seguridad
 
