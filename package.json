@@ -1,6 +1,6 @@
 {
-  "name": "photo-studio-os-v13-general-studio",
-  "version": "1.3.0",
+  "name": "photo-studio-os-v14-contextual-wardrobe",
+  "version": "1.4.0",
   "private": true,
   "scripts": {
     "test": "playwright test",

@@ -1,8 +1,8 @@
-# Security Policy — Photo Studio OS v1.3
+# Security Policy — Photo Studio OS v1.4
 
 ## Modelo de seguridad
 
-Photo Studio OS v1.3 es una aplicación frontend estática. No incluye backend ni servidor propio.
+Photo Studio OS v1.4 es una aplicación frontend estática. No incluye backend ni servidor propio.
 
 ## API keys
 

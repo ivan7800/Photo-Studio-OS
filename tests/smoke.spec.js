@@ -26,3 +26,18 @@ test('CSP no usa unsafe-inline', async ({ page }) => {
   expect(csp).toBeTruthy();
   expect(csp).not.toContain('unsafe-inline');
 });
+
+
+test('adapta ropa al seleccionar modelo masculino adulto', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#subjectType', { label: 'Modelo masculino adulto' });
+  await expect(page.locator('#wardrobeContextHint')).toContainText('Modo masculino');
+  await expect(page.locator('#outfit-cotidiana')).toContainText('camisa Oxford blanca');
+  await expect(page.locator('#outfit-gala')).toContainText('traje italiano azul marino');
+  await expect(page.locator('#outfit-lenceria')).toContainText('Layering masculino');
+  await expect(page.locator('#legmode')).toHaveValue('off');
+  await page.waitForTimeout(500);
+  const prompt = await page.locator('#output').inputValue();
+  expect(prompt.toLowerCase()).not.toContain('vestido ajustado tipo bodycon');
+  expect(prompt.toLowerCase()).not.toContain('medias thigh-high');
+});

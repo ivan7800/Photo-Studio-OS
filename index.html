@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: https:; connect-src https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; style-src 'self'; script-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"/>
-<title>Photo Studio OS v1.3 · AI Photography Director Suite</title>
+<title>Photo Studio OS v1.4 · AI Photography Director Suite</title>
 <link rel="stylesheet" href="assets/styles.css"/>
 
 </head>
@@ -13,7 +13,7 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-eye">Photo Studio OS · v1.3 · AI Photography Director Suite</div>
+  <div class="hero-eye">Photo Studio OS · v1.4 · AI Photography Director Suite</div>
   <h1>Photo Studio OS<br><em>AI Photography Director</em></h1>
   <p class="hero-sub">Suite profesional para diseñar retratos, moda, editorial, lifestyle, beauty, senior photography, campañas comerciales y proyectos visuales asistidos por IA.</p>
   <div class="htags">
@@ -36,7 +36,7 @@
   <p data-u-style="u002">
     Las keys se guardan solo durante esta sesión del navegador (sessionStorage). Al usar funciones IA se envían directamente al proveedor elegido: Anthropic, Gemini u OpenAI. Para máxima seguridad, usa keys con límites de gasto y bórralas al terminar.
   </p>
-  <div class="secure-note">Modo GitHub endurecido: JS/CSS externos, CSP endurecida, keys solo de sesión y tests E2E incluidos. Pensado como estudio fotográfico general, no como nicho único.</div>
+  <div class="secure-note">Modo GitHub endurecido: JS/CSS externos, CSP sin unsafe-inline, keys solo de sesión y tests E2E incluidos. Pensado como estudio fotográfico general, no como nicho único.</div>
   <div class="api-key-row">
     <span class="api-provider-badge api-anthropic">Anthropic</span>
     <input class="api-key-input" id="keyAnthropic" type="password" placeholder="sk-ant-api03-..." data-oninput="saveKeys();updateKeyStatus()"/>
@@ -116,7 +116,7 @@
       <option value="">No especificar</option>
       <option value="figura esbelta y elegante">Esbelta elegante</option>
       <option value="figura curvilínea con naturalidad">Curvilínea natural</option>
-      <option value="figura atlética natural">Atlética natural</option>
+      <option value="figura atlética natural">Atlética madura</option>
       <option value="figura plena y natural">Plena natural</option>
       <option value="figura delgada de hueso fino">Delgada fina</option>
     </select>
@@ -469,10 +469,11 @@
 
 <!-- ⑤  CATEGORÍA DE ROPA -->
 <div class="sec"><span class="sec-n">05</span>Categoría de ropa</div>
+<div id="wardrobeContextHint" class="context-hint" role="status" aria-live="polite"></div>
 <div class="cat-tabs" id="catTabs">
   <button class="cat-tab active" data-onclick="switchCat('cotidiana',this)">🏠 Casa · Cotidiana</button>
   <button class="cat-tab" data-onclick="switchCat('gala',this)">✨ Gala · Fiesta</button>
-  <button class="cat-tab" data-onclick="switchCat('lenceria',this)">🌹 Lencería editorial</button>
+  <button class="cat-tab" data-onclick="switchCat('lenceria',this)">🧥 Layering editorial</button>
   <button class="cat-tab" data-onclick="switchCat('disfraz',this)">🎭 Disfraces</button>
   <button class="cat-tab" data-onclick="switchCat('banyo',this)">🏖️ Baño · Playa</button>
   <button class="cat-tab" data-onclick="switchCat('deporte',this)">⚡ Deportivo</button>
@@ -492,7 +493,7 @@
           <option>vestido satinado tipo cóctel</option>
           <option>vestido midi de punto suave</option>
           <option>vestido envolvente tipo wrap</option>
-          <option>vestido floral suave estilo verano elegante</option>
+          <option>vestido floral suave estilo verano maduro</option>
           <option>vestido de seda natural con tirantes finos</option>
           <option>vestido asimétrico elegante</option>
           <option>vestido ajustado con escote discreto</option>
@@ -625,7 +626,7 @@
   </div>
   <div class="g2">
     <div class="box">
-      <label>Lencería editorial</label>
+      <label>Layering editorial</label>
       <select id="outfit-lenceria">
         <optgroup label="── Bodysuits ──">
           <option selected>bodysuit de encaje elegante</option>
@@ -675,7 +676,7 @@
         </optgroup>
         <option>Custom</option>
       </select>
-      <input id="customOutfit-lenceria" placeholder="Custom lencería"/>
+      <input id="customOutfit-lenceria" placeholder="Custom layering"/>
     </div>
     <div class="box">
       <label>Capa exterior (opcional)</label>
@@ -711,7 +712,7 @@
           <option>uniforme de policía femenina estilizado editorial</option>
         </optgroup>
         <optgroup label="── Rol elegante ──">
-          <option>estilismo pin-up editorial elegante estilo años 50</option>
+          <option>disfraz pin-up maduro elegante estilo años 50</option>
           <option>disfraz de dama victoriana con corsé y falda larga</option>
           <option>disfraz noir años 40 con vestido negro y sombrero</option>
           <option>disfraz de emperatriz romana con toga drapeada</option>
@@ -984,7 +985,7 @@
 </div>
 
 <!-- ⑦  MEDIAS -->
-<div class="sec"><span class="sec-n">07</span>Medias PRO</div>
+<div class="sec"><span class="sec-n">07</span>Legwear / calcetería</div>
 <div class="g4">
   <div class="box">
     <label>Modo</label>
@@ -1082,12 +1083,12 @@
     </select>
   </div>
   <div class="box">
-    <label>Intensidad editorial <span id="sbadge" class="sbadge sb1">Elegante</span></label>
+    <label>Intensidad sensual <span id="sbadge" class="sbadge sb1">Elegante</span></label>
     <select id="sensual" data-onchange="updateSensualUI();checkFilterRisk()">
       <option value="off">Neutro</option>
       <option value="soft" selected>Elegante atractivo</option>
       <option value="medium">Editorial adulto no explícito</option>
-      <option value="high">Editorial intenso</option>
+      <option value="high">Editorial sensual intenso</option>
     </select>
     <div class="intensity-bar" id="intensityBar">
       <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
@@ -1185,7 +1186,7 @@
       <option>tumbada en cama o diván con actitud relajada</option>
       <option>postura de yoga o estiramiento natural</option>
       <option>saliendo del agua con naturalidad</option>
-      <optgroup label="── Poses editoriales ──">
+      <optgroup label="── Poses sensuales ──">
         <option value="de pie con una mano en cadera y mirada directa a cámara">Mano en cadera</option>
         <option value="sentada con piernas cruzadas a la altura de muslo, pose segura y elegante">Piernas cruzadas muslo</option>
         <option value="sentada en el borde de la cama con espalda recta y mirada a cámara">Borde cama · espalda recta</option>
@@ -1205,13 +1206,13 @@
         <option value="recostada leyendo un libro con naturalidad y relajación">Leyendo recostada</option>
         <option value="sosteniendo una copa con elegancia y mirada directa a cámara">Copa en mano</option>
         <option value="frente al espejo ajustando la ropa con naturalidad, doble plano">Frente al espejo</option>
-        <option value="sentada aplicándose perfume con elegancia editorial suave">Aplicando perfume</option>
+        <option value="sentada aplicándose perfume en cuello con elegancia y sensualidad suave">Aplicando perfume</option>
       </optgroup>
       <option>Custom</option>
     
       <optgroup label="── Poses de suelo ──">
         <option value="sentada en el suelo con rodillas recogidas y actitud íntima">Rodillas recogidas suelo</option>
-        <option value="tumbada de lado en el suelo sobre alfombra, pose editorial larga">Tumbada de lado suelo</option>
+        <option value="tumbada de lado en el suelo sobre alfombra, pose sensual larga">Tumbada de lado suelo</option>
         <option value="sentada en suelo con piernas estiradas a los lados en V, postura abierta">Piernas en V abiertas</option>
         <option value="pose felina en cuatro puntos apoyada en suelo, elegante">Pose felina en cuatro puntos</option>
       </optgroup>
@@ -1281,7 +1282,7 @@
       <option>mirada atractiva sin exageración</option>
       <option>mirada editorial bajo cejas</option>
       <option>labios entreabiertos, mirada intensa</option>
-      <option>expresión editorial contenida</option>
+      <option>expresión sensual contenida</option>
     </select>
   </div>
 </div>
@@ -1714,7 +1715,7 @@
           <option value="">Todas</option>
           <option value="cotidiana">Cotidiana</option>
           <option value="gala">Gala</option>
-          <option value="lenceria">Lencería</option>
+          <option value="lenceria">Layering</option>
           <option value="disfraz">Disfraz</option>
           <option value="banyo">Baño</option>
           <option value="deporte">Deporte</option>
@@ -1735,7 +1736,7 @@
     <button class="tag-filter-btn active" data-onclick="setTagFilter('all',this)">Todos</button>
     <button class="tag-filter-btn" data-onclick="setTagFilter('cotidiana',this)">Cotidiana</button>
     <button class="tag-filter-btn" data-onclick="setTagFilter('gala',this)">Gala</button>
-    <button class="tag-filter-btn" data-onclick="setTagFilter('lenceria',this)">Lencería</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('lenceria',this)">Layering</button>
     <button class="tag-filter-btn" data-onclick="setTagFilter('disfraz',this)">Disfraz</button>
     <button class="tag-filter-btn" data-onclick="setTagFilter('banyo',this)">Baño</button>
     <button class="tag-filter-btn" data-onclick="setTagFilter('deporte',this)">Deporte</button>
@@ -1773,8 +1774,8 @@
     <div class="ab-cols">
       <div class="ab-col">
         <div class="ab-col-head ab-col-head-a">▲ Variante A</div>
-        <label>Intensidad editorial A</label>
-        <select id="abSensualA"><option value="off">Neutro</option><option value="soft" selected>Elegante</option><option value="medium">Editorial</option><option value="high">Intenso</option></select>
+        <label>Intensidad sensual A</label>
+        <select id="abSensualA"><option value="off">Neutro</option><option value="soft" selected>Elegante</option><option value="medium">Sugerente</option><option value="high">Intenso</option></select>
         <label>Seguridad A</label>
         <select id="abSafeA"><option value="off">Sin cláusula</option><option value="soft" selected>Suave</option><option value="strict">Estricto</option></select>
         <label>Estilo visual A</label>
@@ -1789,8 +1790,8 @@
       </div>
       <div class="ab-col">
         <div class="ab-col-head ab-col-head-b">▲ Variante B</div>
-        <label>Intensidad editorial B</label>
-        <select id="abSensualB"><option value="off">Neutro</option><option value="soft">Elegante</option><option value="medium" selected>Editorial</option><option value="high">Intenso</option></select>
+        <label>Intensidad sensual B</label>
+        <select id="abSensualB"><option value="off">Neutro</option><option value="soft">Elegante</option><option value="medium" selected>Sugerente</option><option value="high">Intenso</option></select>
         <label>Seguridad B</label>
         <select id="abSafeB"><option value="off">Sin cláusula</option><option value="soft">Suave</option><option value="strict" selected>Estricto</option></select>
         <label>Estilo visual B</label>
@@ -1822,7 +1823,7 @@
         <label>Parámetro a variar</label>
         <select id="seqParam">
           <option value="age">Edad (18→80)</option>
-          <option value="sensual">Intensidad editorial</option>
+          <option value="sensual">Intensidad sensual</option>
           <option value="legtype">Tipo de medias</option>
           <option value="outfitColor">Color de ropa</option>
           <option value="lighting">Iluminación</option>

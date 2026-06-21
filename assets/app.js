@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded',bindDeclarativeEvents);
 
 
 /* ══════════════════════════════════════════════════
-   PHOTO STUDIO OS v1.3 — CORE ENGINE (10/10)
+   PHOTO STUDIO OS v1.4 — CORE ENGINE (CONTEXTUAL WARDROBE)
 ══════════════════════════════════════════════════ */
 let activeCat='cotidiana';
 let outputLang='es';
@@ -100,6 +100,265 @@ const sc=t=>{let o=String(t||'').trim();
   o=o.replace(/\s+,/g,',').replace(/,\s*,/g,',').replace(/\s+\./g,'.').replace(/,\s*\./g,'.');
   return o.replace(/\s{2,}/g,' ').trim()};
 const pick=(id,cid)=>{const s=val(id);return s==='Custom'?val(cid):s};
+
+
+/* ── CONTEXTUAL WARDROBE v1.4 ──
+   Rewrites wardrobe, shoes and legwear lists according to the selected subject.
+   This prevents masculine / neutral / corporate sessions from showing only dresses,
+   lingerie and hosiery-heavy defaults. Internal category keys stay stable so old
+   presets keep working. */
+const WARDROBE_SELECT_IDS=['outfit-cotidiana','outfit-gala','outfit-lenceria','outfit-disfraz','outfit-banyo','outfit-deporte','shoes','jewelry','accessories','legtype','legcolor','transparency','texture','height'];
+const ORIGINAL_CONTEXT_HTML={};
+const ORIGINAL_CONTEXT_LABELS={};
+const CAT_LABELS_DEFAULT={
+  cotidiana:'🏠 Casual · Everyday',
+  gala:'✨ Formal · Gala',
+  lenceria:'🧥 Layering editorial',
+  disfraz:'🎭 Character styling',
+  banyo:'🏖️ Resort · Swim',
+  deporte:'⚡ Sport · Activewear'
+};
+const CAT_LABELS_FEMALE={
+  cotidiana:'🏠 Casa · Cotidiana',
+  gala:'✨ Gala · Fiesta',
+  lenceria:'🌹 Lencería editorial',
+  disfraz:'🎭 Disfraces',
+  banyo:'🏖️ Baño · Playa',
+  deporte:'⚡ Deportivo'
+};
+function rememberOriginalContext(){
+  WARDROBE_SELECT_IDS.forEach(id=>{
+    const n=el(id);
+    if(n && !ORIGINAL_CONTEXT_HTML[id]) ORIGINAL_CONTEXT_HTML[id]=n.innerHTML;
+    if(n && !ORIGINAL_CONTEXT_LABELS[id]){
+      const lb=n.closest('.box')?.querySelector('label');
+      ORIGINAL_CONTEXT_LABELS[id]=lb?lb.textContent:'';
+    }
+  });
+}
+function selectedSubjectText(){
+  const n=el('subjectType');
+  return n && n.options[n.selectedIndex] ? n.options[n.selectedIndex].textContent.toLowerCase() : '';
+}
+function subjectContext(){
+  const v=val('subjectType').toLowerCase();
+  const t=selectedSubjectText();
+  if(v.includes('modelo adulta') || t.includes('femenina')) return 'female';
+  if(v === 'modelo adulto' || v.includes('masculino') || t.includes('masculino')) return 'male';
+  if(v.includes('no binaria') || t.includes('no binaria')) return 'neutral';
+  if(v.includes('corporativo') || t.includes('corporativo')) return 'corporate';
+  if(v.includes('artista') || t.includes('artista')) return 'creative';
+  if(v.includes('senior') || t.includes('senior')) return 'senior';
+  return 'neutral';
+}
+function htmlOption(item,selectedValue,used){
+  const value=Array.isArray(item)?item[0]:item;
+  const label=Array.isArray(item)?item[1]:item;
+  const selected=selectedValue && value===selectedValue && !used.hit;
+  if(selected) used.hit=true;
+  return `<option value="${escapeAttr(value)}"${selected?' selected':''}>${escapeHTML(label)}</option>`;
+}
+function renderGroups(id,groups,selectedValue,fallbackValue){
+  const n=el(id); if(!n) return;
+  const used={hit:false};
+  let html=groups.map(g=>`<optgroup label="${escapeAttr(g.label)}">${g.items.map(it=>htmlOption(it,selectedValue,used)).join('')}</optgroup>`).join('');
+  const customSelected=selectedValue==='Custom';
+  html+=`<option value="Custom"${customSelected?' selected':''}>Custom</option>`;
+  n.innerHTML=html;
+  if(selectedValue && !used.hit && !customSelected){
+    const extra=document.createElement('option');
+    extra.value=selectedValue; extra.textContent=selectedValue; extra.selected=true;
+    n.insertBefore(extra,n.firstChild);
+  }else if(!selectedValue && fallbackValue){
+    n.value=fallbackValue;
+  }
+}
+function setBoxLabel(selectId,text){
+  const n=el(selectId); if(!n) return;
+  let lb=n.previousElementSibling;
+  while(lb && lb.tagName!=='LABEL') lb=lb.previousElementSibling;
+  if(!lb) lb=n.closest('.box')?.querySelector('label');
+  if(lb) lb.textContent=text;
+}
+function setCatLabel(cat,text){
+  const btn=Array.from(document.querySelectorAll('.cat-tab')).find(b=>(b.getAttribute('data-onclick')||'').includes(`switchCat('${cat}'`));
+  if(btn) btn.textContent=text;
+}
+function setLegSectionTitle(text){
+  const sec=Array.from(document.querySelectorAll('.sec')).find(n=>n.textContent.includes('Medias PRO')||n.textContent.includes('Calcetería')||n.textContent.includes('Legwear'));
+  if(sec) sec.innerHTML='<span class="sec-n">07</span>'+escapeHTML(text);
+}
+function setWardrobeHint(ctx){
+  const hint=el('wardrobeContextHint'); if(!hint) return;
+  const messages={
+    female:'Modo femenino: vestidos, lencería editorial, swimwear y medias disponibles como categorías especializadas.',
+    male:'Modo masculino: se sustituyen vestidos/lencería por menswear, tailoring, layering, barber, fitness y resort masculino.',
+    neutral:'Modo neutro: moda adulta general, andrógina, minimalista y editorial sin sesgo femenino.',
+    corporate:'Modo corporativo: business wear, executive portrait, calzado formal y accesorios profesionales.',
+    creative:'Modo artista: styling contemporáneo, experimental, editorial y escénico.',
+    senior:'Modo senior: retrato adulto premium, prendas elegantes, cómodas y editoriales sin encasillar el género.'
+  };
+  hint.innerHTML=`<strong>Ropa contextual activa:</strong> ${escapeHTML(messages[ctx]||messages.neutral)}`;
+}
+function setContextualLabels(ctx){
+  const female=ctx==='female';
+  const labels=female?CAT_LABELS_FEMALE:CAT_LABELS_DEFAULT;
+  Object.entries(labels).forEach(([cat,label])=>setCatLabel(cat,label));
+  if(ctx==='male'){
+    setBoxLabel('outfit-cotidiana','Menswear casual · everyday');
+    setBoxLabel('outfit-gala','Menswear formal · gala');
+    setBoxLabel('outfit-lenceria','Layering editorial masculino');
+    setBoxLabel('outfit-disfraz','Character styling masculino');
+    setBoxLabel('outfit-banyo','Resort · swim masculino');
+    setBoxLabel('outfit-deporte','Sportswear masculino');
+    setBoxLabel('shoes','Calzado masculino');
+    setBoxLabel('jewelry','Joyería / relojería');
+    setBoxLabel('accessories','Complementos masculinos');
+    setBoxLabel('legtype','Calcetería');
+    setBoxLabel('legcolor','Color calcetería');
+    setLegSectionTitle('Calcetería / piernas');
+  }else if(ctx==='corporate'){
+    setBoxLabel('outfit-cotidiana','Ropa business · executive');
+    setBoxLabel('outfit-gala','Formal corporativo');
+    setBoxLabel('outfit-lenceria','Layering profesional');
+    setBoxLabel('outfit-disfraz','Roles profesionales');
+    setBoxLabel('outfit-banyo','Resort corporativo');
+    setBoxLabel('outfit-deporte','Athleisure ejecutivo');
+    setBoxLabel('shoes','Calzado business');
+    setBoxLabel('jewelry','Joyería / reloj');
+    setBoxLabel('accessories','Complementos profesionales');
+    setBoxLabel('legtype','Calcetería');
+    setBoxLabel('legcolor','Color calcetería');
+    setLegSectionTitle('Calcetería / piernas');
+  }else if(ctx==='female'){
+    WARDROBE_SELECT_IDS.forEach(id=>setBoxLabel(id,ORIGINAL_CONTEXT_LABELS[id]||''));
+    setLegSectionTitle('Medias PRO');
+  }else{
+    setBoxLabel('outfit-cotidiana','Ropa casual · editorial');
+    setBoxLabel('outfit-gala','Formal · gala editorial');
+    setBoxLabel('outfit-lenceria','Layering editorial');
+    setBoxLabel('outfit-disfraz','Character styling');
+    setBoxLabel('outfit-banyo','Resort · swim');
+    setBoxLabel('outfit-deporte','Activewear · sport');
+    setBoxLabel('shoes','Calzado');
+    setBoxLabel('jewelry','Joyería / accesorios finos');
+    setBoxLabel('accessories','Complementos');
+    setBoxLabel('legtype','Legwear / calcetería');
+    setBoxLabel('legcolor','Color legwear');
+    setLegSectionTitle('Legwear / calcetería');
+  }
+}
+const WARDROBE_CONTEXTS={
+  neutral:{
+    outfitCotidiana:[{label:'── Minimal / editorial ──',items:['camisa blanca oversize y pantalón recto','blazer oversize con camiseta premium y pantalón sastre','jersey fino de cuello alto con pantalón amplio','chaqueta denim premium y pantalón negro recto','gabardina ligera sobre conjunto minimal','camiseta negra premium y pantalón de pinzas','mono utilitario minimalista','conjunto de lino relajado y elegante']},{label:'── Lifestyle adulto ──',items:['loungewear premium de punto suave','sudadera premium estructurada con pantalón ancho','camisa fluida con vaqueros rectos','chaqueta bomber minimal con pantalón técnico','cardigan largo con pantalón de lana fina']}],
+    outfitGala:[{label:'── Formal andrógino ──',items:['traje sastre negro minimalista','smoking contemporáneo con camisa blanca','traje crema de lino premium','blazer satinado con pantalón wide-leg','conjunto monocromo de gala','chaqueta estructurada con pantalón palazzo','traje cruzado de corte editorial']}],
+    outfitLayer:[{label:'── Layering editorial ──',items:['tank top premium bajo blazer abierto','camisa de seda bajo chaqueta estructurada','top minimal de cuello alto bajo americana','body editorial cubierto con blazer oversize','camiseta interior premium con camisa abierta','chaleco sastre sobre camiseta blanca']}],
+    outfitRole:[{label:'── Profesiones / personaje ──',items:['estilismo de arquitecto creativo con americana negra','look de galerista de arte con traje minimal','personaje noir con gabardina y sombrero','look de músico de estudio con chaqueta vintage','estilismo de director creativo con gafas y libreta','look de chef editorial con chaqueta blanca premium']}],
+    outfitBanyo:[{label:'── Resort neutral ──',items:['camisa de lino abierta sobre bañador discreto','short resort de lino con camisa ligera','kaftán minimal de playa','conjunto resort de algodón blanco','rashguard premium con short de baño','look spa con albornoz blanco premium']}],
+    outfitDeporte:[{label:'── Activewear neutral ──',items:['conjunto técnico minimal de entrenamiento','sudadera técnica y joggers premium','chaqueta running ligera con pantalón técnico','look yoga adulto de tejido suave','set athleisure monocromo','polo técnico con pantalón sport elegante']}],
+    shoes:[{label:'── Casual / formal ──',items:['mocasines elegantes de cuero pulido','zapatillas premium blancas minimalistas','botines Chelsea de cuero negro','zapatos Oxford negros','derbies de cuero marrón','slippers tipo loafer de cuero','sandalias minimalistas de cuero','sin calzado visible']}],
+    jewelry:[{label:'── Accesorios finos ──',items:[['','Sin joyería'],'reloj clásico de acero','reloj minimalista negro','cadena fina plateada','anillo minimalista de plata','pulsera de cuero fina','joyería minimalista dorada']}],
+    accessories:[{label:'── Complementos ──',items:[['','Sin complemento'],'gafas de sol de diseño clásico','gafas discretas graduadas','bolso tote de cuero minimal','maletín creativo de cuero','pañuelo de seda al cuello','libro abierto en mano','taza de café en mano']}],
+    legtype:[{label:'── Calcetería ──',items:['sin medias visibles','calcetines invisibles','calcetines de vestir finos','calcetines deportivos blancos premium','calcetines negros minimalistas','calcetines de lana fina']}],
+    legcolor:[{label:'── Color ──',items:[['sin color específico','sin color específico'],['negras','negras'],['blancas','blancas'],['gris humo','gris humo'],['azul noche','azul noche'],['marrones','marrones']]}]
+  },
+  male:{
+    outfitCotidiana:[{label:'── Casual premium ──',items:['camisa Oxford blanca y pantalón chino','camiseta blanca premium con vaqueros rectos','jersey de cuello alto negro con pantalón sastre','chaqueta de cuero negra y camiseta minimalista','sobrecamisa de lana con pantalón recto','polo de punto fino con pantalón de pinzas','camisa de lino clara y pantalón elegante','cardigan de cashmere con camiseta blanca']},{label:'── Street / lifestyle ──',items:['bomber premium con joggers estructurados','chaqueta denim oscura con camiseta negra','gabardina beige sobre look monocromo','sudadera minimalista de lujo con pantalón técnico']}],
+    outfitGala:[{label:'── Trajes / tailoring ──',items:['traje italiano azul marino con camisa blanca','smoking negro clásico con pajarita','traje cruzado gris antracita','traje beige de lino premium','traje negro minimalista estilo editorial','blazer de terciopelo con pantalón negro','traje tres piezas con chaleco','americana blanca de gala con pantalón negro']}],
+    outfitLayer:[{label:'── Layering masculino ──',items:['camiseta interior blanca premium bajo blazer abierto','camisa negra abierta sobre camiseta minimalista','chaleco sastre sobre camisa blanca','tank top deportivo premium bajo chaqueta de cuero','camisa de seda negra con cuello abierto','jersey fino bajo americana estructurada']}],
+    outfitRole:[{label:'── Roles masculinos editoriales ──',items:['detective noir con gabardina y sombrero','piloto vintage con cazadora de cuero','profesor elegante con americana de tweed','médico editorial con bata blanca premium','abogado de poder con traje oscuro','barbero clásico con chaleco y camisa','explorador urbano con chaqueta técnica','músico rock con chaqueta de cuero']}],
+    outfitBanyo:[{label:'── Resort masculino ──',items:['short de baño premium con camisa de lino abierta','bañador tipo boxer elegante','short resort blanco con polo de lino','look spa con albornoz blanco premium','rashguard negro premium con short deportivo','camisa resort estampada y bermuda de lino']}],
+    outfitDeporte:[{label:'── Sportswear masculino ──',items:['conjunto training premium camiseta técnica y joggers','camiseta compression negra con pantalón deportivo','look running con chaqueta cortavientos y shorts','ropa de boxeo editorial con bata deportiva','outfit de tenis con polo blanco y shorts','activewear de gimnasio monocromo','equipación cycling premium minimalista']}],
+    shoes:[{label:'── Hombre formal / casual ──',items:['zapatos Oxford negros pulidos','derbies marrones de cuero','mocasines penny de cuero','botines Chelsea negros','botas worker premium','zapatillas blancas minimalistas','zapatillas deportivas premium negras','sandalias de cuero masculinas','sin calzado visible']}],
+    jewelry:[{label:'── Relojería / joyería masculina ──',items:[['','Sin joyería'],'reloj clásico de acero','reloj deportivo premium','cadena fina de plata','anillo signet discreto','pulsera de cuero negro','gemelos plateados discretos']}],
+    accessories:[{label:'── Complementos masculinos ──',items:[['','Sin complemento'],'gafas de sol aviador','gafas graduadas de montura negra','maletín de cuero elegante','reloj visible en muñeca','pañuelo de bolsillo discreto','sombrero fedora noir','taza de café en mano','libro cerrado en mano']}],
+    legtype:[{label:'── Calcetines ──',items:['sin medias visibles','calcetines de vestir negros','calcetines de vestir azul marino','calcetines invisibles','calcetines deportivos blancos premium','calcetines de lana gris fina']}],
+    legcolor:[{label:'── Color ──',items:[['sin color específico','sin color específico'],['negras','negras'],['azul noche','azul noche'],['gris humo','gris humo'],['blancas','blancas'],['marrones','marrones']]}]
+  },
+  corporate:{
+    outfitCotidiana:[{label:'── Executive portrait ──',items:['traje sastre ejecutivo con camisa blanca','blazer azul marino y pantalón formal','americana gris con camisa Oxford','conjunto business casual premium','jersey de cuello alto bajo blazer','camisa blanca impecable con pantalón de pinzas','traje pantalón minimalista de oficina']}],
+    outfitGala:[{label:'── Formal business ──',items:['smoking corporativo de gala','traje negro formal de evento','traje azul noche con camisa blanca','blazer de terciopelo discreto con pantalón formal','conjunto de gala sobrio para evento empresarial']}],
+    outfitLayer:[{label:'── Layering profesional ──',items:['camisa blanca bajo blazer estructurado','chaleco sastre con camisa premium','jersey fino bajo americana ejecutiva','top o camiseta premium bajo blazer cerrado','gabardina sobre traje ejecutivo']}],
+    outfitRole:[{label:'── Roles profesionales ──',items:['CEO en traje oscuro con postura segura','arquitecto con americana negra y planos','abogado con traje formal y maletín','consultor creativo con blazer y libreta','directivo tech con look business casual premium']}],
+    outfitBanyo:[{label:'── Resort business ──',items:['look resort de lino premium para viaje corporativo','camisa de lino y pantalón blanco en terraza de hotel','polo premium con pantalón chino claro','albornoz de spa de hotel ejecutivo']}],
+    outfitDeporte:[{label:'── Athleisure ejecutivo ──',items:['polo técnico premium y pantalón sport','chaqueta deportiva minimal y joggers estructurados','look golf ejecutivo con polo y pantalón chino','activewear monocromo sobrio de gimnasio']}],
+    shoes:[{label:'── Business shoes ──',items:['zapatos Oxford negros pulidos','mocasines de cuero pulido','derbies marrones elegantes','botines Chelsea negros','zapatillas premium blancas minimalistas','tacón bajo cómodo y elegante','zapatos negros cerrados elegantes','sin calzado visible']}],
+    jewelry:[{label:'── Accesorios business ──',items:[['','Sin joyería'],'reloj clásico de acero','reloj dorado discreto','pendientes pequeños minimalistas','gemelos plateados discretos','anillo minimalista','joyería minimalista plateada']}],
+    accessories:[{label:'── Complementos profesionales ──',items:[['','Sin complemento'],'maletín de cuero elegante','tablet fina en mano','gafas graduadas discretas','bolígrafo premium en mano','carpeta de documentos','taza de café en mano','reloj visible en muñeca']}],
+    legtype:[{label:'── Calcetería ──',items:['sin medias visibles','calcetines de vestir negros','calcetines de vestir azul marino','pantyhose completas','medias nude ultra finas efecto invisible']}],
+    legcolor:[{label:'── Color ──',items:[['sin color específico','sin color específico'],['negras','negras'],['azul noche','azul noche'],['nude efecto natural','nude efecto natural'],['gris humo','gris humo']]}]
+  },
+  creative:{
+    outfitCotidiana:[{label:'── Creative studio ──',items:['chaqueta oversize de diseño y pantalón oscuro','look monocromo negro con piezas estructuradas','camisa estampada artística y pantalón amplio','kimono contemporáneo sobre conjunto minimal','chaqueta vintage con camiseta gráfica premium','gabardina larga con botas editoriales']}],
+    outfitGala:[{label:'── Art gala ──',items:['traje de gala experimental con silueta arquitectónica','conjunto avant-garde negro estructurado','blazer satinado oversize con pantalón fluido','look de alfombra roja artístico y minimal','conjunto de galería con textura escultórica']}],
+    outfitLayer:[{label:'── Experimental layering ──',items:['top minimal bajo chaqueta escultórica','camisa transparente editorial bajo blazer cerrado','chaleco de diseño sobre camiseta negra','capas de tejido técnico con volumen controlado','body o base layer cubierto por chaqueta oversize']}],
+    outfitRole:[{label:'── Personaje artístico ──',items:['pintor contemporáneo con mono de trabajo premium','músico experimental con chaqueta vintage','director de cine con gabardina oscura','performer teatral con abrigo largo','diseñador de moda con look avant-garde']}],
+    outfitBanyo:[{label:'── Resort artístico ──',items:['kaftán artístico sobre look resort','camisa resort estampada con short minimal','conjunto blanco de lino con silueta amplia','albornoz de spa con textura premium']}],
+    outfitDeporte:[{label:'── Movement / performance ──',items:['activewear experimental monocromo','ropa de danza contemporánea de tejido fluido','conjunto técnico minimal para movimiento','sudadera oversize con joggers de diseño']}],
+    shoes:[{label:'── Footwear creativo ──',items:['botines negros de diseño','zapatillas de diseñador minimalistas','mocasines chunky de cuero','botas altas editoriales','sandalias de diseño minimal','sin calzado visible']}],
+    jewelry:[{label:'── Statement pieces ──',items:[['','Sin joyería'],'collar bold statement','anillo escultórico grande','pendientes geométricos','cadena plateada gruesa','joyería minimalista negra']}],
+    accessories:[{label:'── Props creativos ──',items:[['','Sin complemento'],'cuaderno de artista en mano','cámara analógica colgada','gafas de diseño','pincel o carboncillo en mano','libro de arte abierto','bufanda larga de textura premium']}],
+    legtype:[{label:'── Legwear creativo ──',items:['sin medias visibles','calcetines negros minimalistas','calcetines artísticos con patrón sutil','medias opacas 80D','pantyhose completas']}],
+    legcolor:[{label:'── Color ──',items:[['sin color específico','sin color específico'],['negras','negras'],['gris humo','gris humo'],['blancas','blancas'],['azul noche','azul noche']]}]
+  },
+  senior:{
+    outfitCotidiana:[{label:'── Senior premium ──',items:['americana de lino clara y pantalón elegante','camisa de lino suave y pantalón claro','jersey de cashmere con pantalón sastre','blusa o camisa de seda con pantalón palazzo','chaqueta de tweed con pantalón recto','vestido camisero elegante de lino','conjunto de punto premium cómodo y refinado']}],
+    outfitGala:[{label:'── Gala senior premium ──',items:['traje sastre de gala con caída elegante','vestido largo sobrio de seda natural','smoking blanco o negro de corte clásico','conjunto palazzo de seda con chaqueta ligera','vestido midi de gala con manga francesa','blazer de terciopelo con pantalón formal']}],
+    outfitLayer:[{label:'── Layering elegante ──',items:['camisa de seda bajo blazer suave','top discreto con chal de cachemira','jersey fino bajo americana de lino','base layer premium con chaqueta larga','camiseta de algodón pima bajo cardigan de cashmere']}],
+    outfitRole:[{label:'── Retrato con carácter ──',items:['escritora senior con chal y libro','directiva senior con traje impecable','artista senior con chaqueta de lino','profesor senior con americana de tweed','viajera elegante con gabardina clara']}],
+    outfitBanyo:[{label:'── Resort senior ──',items:['bañador entero elegante con pareo de lino','kaftán premium sobre bañador discreto','camisa de lino blanca y pantalón resort','albornoz de spa de hotel lujo','look de terraza mediterránea con lino claro']}],
+    outfitDeporte:[{label:'── Wellness senior ──',items:['conjunto wellness de tejido suave','ropa de yoga cómoda y premium','polo técnico y pantalón sport elegante','chándal premium de punto fino','activewear senior sobrio y cómodo']}],
+    shoes:[{label:'── Calzado elegante cómodo ──',items:['mocasines elegantes de cuero pulido','tacón bajo cómodo y elegante','zapatos negros cerrados elegantes','zapatillas premium blancas minimalistas','sandalias elegantes de tiras finas','botines de cuero con tacón bajo','sin calzado visible']}],
+    jewelry:[{label:'── Joyería clásica ──',items:[['','Sin joyería'],'collar de perlas clásico','reloj clásico dorado en muñeca','pendientes de perla clásicos','joyería minimalista plateada','pulsera de oro discreta','anillo de piedra grande tipo cóctel']}],
+    accessories:[{label:'── Complementos elegantes ──',items:[['','Sin complemento'],'gafas graduadas discretas','pañuelo de seda al cuello','chal de cachemira sobre hombros','libro abierto en mano','bolso de mano de cuero elegante','sombrero de ala ancha elegante']}],
+    legtype:[{label:'── Legwear opcional ──',items:['sin medias visibles','pantyhose completas','medias nude ultra finas efecto invisible','medias opacas 40D','calcetines de vestir finos']}],
+    legcolor:[{label:'── Color ──',items:[['sin color específico','sin color específico'],['nude efecto natural','nude efecto natural'],['negras','negras'],['marrones','marrones'],['gris humo','gris humo']]}]
+  }
+};
+function getWardrobeConfig(ctx){return WARDROBE_CONTEXTS[ctx]||WARDROBE_CONTEXTS.neutral;}
+function applySubjectContext(options={}){
+  rememberOriginalContext();
+  const ctx=subjectContext();
+  const previous=window._lastSubjectContext;
+  const changed=previous!==ctx;
+  const preserve=options.preserveValues===true && !changed;
+  const old={};
+  WARDROBE_SELECT_IDS.forEach(id=>old[id]=preserve?val(id):'');
+  if(ctx==='female'){
+    WARDROBE_SELECT_IDS.forEach(id=>{if(el(id)&&ORIGINAL_CONTEXT_HTML[id]) el(id).innerHTML=ORIGINAL_CONTEXT_HTML[id];});
+  }else{
+    const c=getWardrobeConfig(ctx);
+    renderGroups('outfit-cotidiana',c.outfitCotidiana,old['outfit-cotidiana'],c.outfitCotidiana[0].items[0]);
+    renderGroups('outfit-gala',c.outfitGala,old['outfit-gala'],c.outfitGala[0].items[0]);
+    renderGroups('outfit-lenceria',c.outfitLayer,old['outfit-lenceria'],c.outfitLayer[0].items[0]);
+    renderGroups('outfit-disfraz',c.outfitRole,old['outfit-disfraz'],c.outfitRole[0].items[0]);
+    renderGroups('outfit-banyo',c.outfitBanyo,old['outfit-banyo'],c.outfitBanyo[0].items[0]);
+    renderGroups('outfit-deporte',c.outfitDeporte,old['outfit-deporte'],c.outfitDeporte[0].items[0]);
+    renderGroups('shoes',c.shoes,old.shoes,c.shoes[0].items[0]);
+    renderGroups('jewelry',c.jewelry,old.jewelry,'');
+    renderGroups('accessories',c.accessories,old.accessories,'');
+    renderGroups('legtype',c.legtype,old.legtype,'sin medias visibles');
+    renderGroups('legcolor',c.legcolor,old.legcolor,'sin color específico');
+  }
+  setContextualLabels(ctx);
+  setWardrobeHint(ctx);
+  if(changed || options.forceLegDefaults){
+    if(ctx==='female'){
+      setVal('legmode','on');
+      if(!val('legtype') || val('legtype')==='sin medias visibles') setVal('legtype','medias thigh-high');
+      if(!val('legcolor') || val('legcolor')==='sin color específico') setVal('legcolor','marrones');
+    }else{
+      setVal('legmode','off');
+      setVal('legtype','sin medias visibles');
+      if(!val('legcolor')) setVal('legcolor','sin color específico');
+    }
+  }
+  window._lastSubjectContext=ctx;
+  updateOutfitSwatch();updateOutfitSwatch2();updateLegSwatch();checkFilterRisk();
+}
+function isSockLikeLegwear(type){
+  return /calcetines|sock|calcetería/i.test(String(type||''));
+}
 
 /* ── CATEGORY SWITCH ── */
 function switchCat(cat,btn){
@@ -255,16 +514,18 @@ function getMakeup(){
 function legwear(){
   if(val('legmode')==='off') return '';
   if(val('legtype')==='Custom') return val('customLegwear');
-  if(val('legtype')==='sin medias visibles') return '';
+  const t=val('legtype');
+  if(t==='sin medias visibles') return '';
   const skip=['sin color específico','sin detalle extra'];
-  return join([val('legtype'),val('legcolor'),val('transparency'),val('texture'),val('height')].filter(x=>!skip.includes(x)),' ');
+  if(isSockLikeLegwear(t)) return join([t,val('legcolor')].filter(x=>!skip.includes(x)),' ');
+  return join([t,val('legcolor'),val('transparency'),val('texture'),val('height')].filter(x=>!skip.includes(x)),' ');
 }
 
 /* ── FOOT PROTECTION — evitar bug de dedos con medias ── */
 function footProtection(){
   if(val('legmode')==='off') return '';
   const type=val('legtype');
-  if(!type||type==='sin medias visibles'||type==='Custom') return '';
+  if(!type||type==='sin medias visibles'||type==='Custom'||isSockLikeLegwear(type)) return '';
   const shoes=val('shoes')||val('customShoes')||'';
   // Calzado que deja los pies o dedos visibles
   const exposedFoot=
@@ -305,6 +566,7 @@ function footProtection(){
 function fixLegCoherence(){
   const t=val('legtype');
   if(t==='sin medias visibles'){setVal('legmode','off');return}
+  if(isSockLikeLegwear(t)){setVal('height','altura tobillo');setVal('texture','sin detalle extra');return}
   if(t.includes('pantyhose')||t.includes('80D')||t.includes('40D'))setVal('height','altura completa');
   if(t.includes('thigh-high')||t.includes('altas')||t.includes('banda superior'))setVal('height','altura muslo');
   if(t.includes('rodilla'))setVal('height','altura rodilla');
@@ -336,7 +598,7 @@ function validateAdultOnly(){
   }
   const fields=['customAge','customEtnia','customOutfit-cotidiana','customOutfit-gala','customOutfit-lenceria','customOutfit-disfraz','customOutfit-banyo','customOutfit-deporte','customScene','customAction','customStyle'];
   const combined=fields.map(id=>val(id)).join(' ').toLowerCase();
-  if(/(niñ|menor|adolescente|teen|child|underage|schoolgirl|colegiala|infantil)/i.test(combined)){
+  if(/(^|\b)(niñ|menor|adolescente|teen|child|underage|schoolgirl|colegiala|infantil)(\b|$)/i.test(combined)){
     alert('Bloqueado: se han detectado términos de menor de edad. Mantén el proyecto en sujetos adultos 18+.');
     return false;
   }
@@ -745,15 +1007,15 @@ function translateOutput(){
 
 /* ── HISTORY ── */
 function addToHistory(text){
-  let hist=JSON.parse(localStorage.getItem('psos13History')||'[]');
+  let hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
   const entry={text:text.substring(0,300),date:new Date().toISOString(),lang:outputLang,cat:activeCat};
   hist=hist.filter(h=>h.text!==entry.text);
   hist.unshift(entry);
-  localStorage.setItem('psos13History',JSON.stringify(hist.slice(0,20)));
+  localStorage.setItem('psos14History',JSON.stringify(hist.slice(0,20)));
   renderHistory();
 }
 function renderHistory(){
-  const hist=safeJSON('psos13History',[]);
+  const hist=safeJSON('psos14History',[]);
   const t=el('histList');
   if(!t)return;
   if(!hist.length){t.innerHTML="<span data-u-style=\"u069\">Sin historial aún.</span>";return}
@@ -765,17 +1027,17 @@ function renderHistory(){
     </div>`).join('');
 }
 function loadHistory(i){
-  const hist=JSON.parse(localStorage.getItem('psos13History')||'[]');
+  const hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
   if(hist[i]) el('output').value=hist[i].text;
 }
 function deleteHistory(i){
-  const hist=JSON.parse(localStorage.getItem('psos13History')||'[]');
+  const hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
   hist.splice(i,1);
-  localStorage.setItem('psos13History',JSON.stringify(hist));
+  localStorage.setItem('psos14History',JSON.stringify(hist));
   renderHistory();
 }
 function clearHistory(){
-  if(confirm('¿Borrar todo el historial?')){localStorage.removeItem('psos13History');renderHistory();}
+  if(confirm('¿Borrar todo el historial?')){localStorage.removeItem('psos14History');renderHistory();}
 }
 
 function updateSensualUI(){return updateEditorialUI();}
@@ -792,7 +1054,7 @@ function downloadTxt(){
   const blob=new Blob([el('output').value],{type:'text/plain;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='photo_studio_v9_prompts.txt';
+  a.download='photo_studio_os_v1_4_prompts.txt';
   a.click();URL.revokeObjectURL(a.href);
 }
 
@@ -825,9 +1087,15 @@ function randomCoherent(){
 function autoPerfect(){
   setVal('mode','clean');setVal('detail','mejorado');
   setVal('safe',val('format')==='chatgpt'?'strict':'soft');
-  setVal('variation','soft');setVal('legmode','on');setVal('legtype','medias thigh-high');
-  setVal('legcolor',(activeCat==='lenceria'||activeCat==='gala')?'negras':'marrones');
-  setVal('transparency','semitransparentes');setVal('height','altura muslo');
+  setVal('variation','soft');
+  if(subjectContext()==='female'){
+    setVal('legmode','on');setVal('legtype','medias thigh-high');
+    setVal('legcolor',(activeCat==='lenceria'||activeCat==='gala')?'negras':'marrones');
+    setVal('height','altura muslo');
+  }else{
+    setVal('legmode','off');setVal('legtype','sin medias visibles');setVal('legcolor','sin color específico');
+  }
+  setVal('transparency','semitransparentes');
   setVal('sensual',val('format')==='chatgpt'?'soft':'medium');
   setVal('lighting','luz natural lateral suave');setVal('style','fotografía realista natural');
   fixLegCoherence();updateEditorialUI();updateLegSwatch();checkFilterRisk();
@@ -861,24 +1129,25 @@ function applyState(o){
   if(o.cam) camState={...o.cam};
   if(o.lang) setLang(o.lang);
   Object.keys(o).forEach(id=>{if(id!=='cat'&&id!=='cam'&&id!=='lang') setVal(id,o[id])});
+  applySubjectContext({preserveValues:true});
   updateEditorialUI();updateSkinSwatch();updateHairSwatch();updateLipSwatch();updateOutfitSwatch();updateOutfitSwatch2();updateLegSwatch();
   generate();
 }
 
 
-function loadPreset(i){const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');if(!list[i])return;list[i].useCount=(list[i].useCount||0)+1;localStorage.setItem('psos13Presets',JSON.stringify(list));applyState(list[i].state);}
-function toggleFavorite(i){const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');if(!list[i])return;list[i].fav=!list[i].fav;localStorage.setItem('psos13Presets',JSON.stringify(list));renderPresets();}
-function deletePreset(i){const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');list.splice(i,1);localStorage.setItem('psos13Presets',JSON.stringify(list));renderPresets()}
+function loadPreset(i){const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');if(!list[i])return;list[i].useCount=(list[i].useCount||0)+1;localStorage.setItem('psos14Presets',JSON.stringify(list));applyState(list[i].state);}
+function toggleFavorite(i){const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');if(!list[i])return;list[i].fav=!list[i].fav;localStorage.setItem('psos14Presets',JSON.stringify(list));renderPresets();}
+function deletePreset(i){const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');list.splice(i,1);localStorage.setItem('psos14Presets',JSON.stringify(list));renderPresets()}
 
 /* ── CLONE PRESET ── */
 function clonePreset(i){
-  const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
   if(!list[i]) return;
   const clone=JSON.parse(JSON.stringify(list[i]));
   clone.name='[Clone] '+clone.name;
   clone.date=new Date().toISOString();
   list.splice(i+1,0,clone);
-  localStorage.setItem('psos13Presets',JSON.stringify(list.slice(0,80)));
+  localStorage.setItem('psos14Presets',JSON.stringify(list.slice(0,80)));
   renderPresets();
   // flash the preset name input with the clone name so user can rename easily
   const inp=el('presetName');
@@ -971,15 +1240,15 @@ async function copySeqOutput(){
   try{await navigator.clipboard.writeText(r.textContent);alert('Secuencia copiada ✓');}
   catch(e){r.select&&r.select();}
 }
-function clearPresets(){if(confirm('¿Borrar todos los presets guardados?')){localStorage.removeItem('psos13Presets');renderPresets()}}
+function clearPresets(){if(confirm('¿Borrar todos los presets guardados?')){localStorage.removeItem('psos14Presets');renderPresets()}}
 
 /* ── EXPORT / IMPORT JSON ── */
 function exportPresetsJSON(){
-  const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
   if(!list.length){alert('No hay presets guardados para exportar.');return;}
   const blob=new Blob([JSON.stringify(list,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='photo_studio_os_v13_presets.json';a.click();URL.revokeObjectURL(a.href);
+  a.download='photo_studio_os_v14_presets.json';a.click();URL.revokeObjectURL(a.href);
 }
 function importPresetsJSON(input){
   const file=input.files[0];if(!file)return;
@@ -989,9 +1258,9 @@ function importPresetsJSON(input){
     try{
       const data=JSON.parse(e.target.result);
       if(!Array.isArray(data))throw new Error('Formato inválido');
-      const existing=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+      const existing=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
       const merged=[...data,...existing].slice(0,80);
-      localStorage.setItem('psos13Presets',JSON.stringify(merged));
+      localStorage.setItem('psos14Presets',JSON.stringify(merged));
       renderPresets();
       alert('Importados '+data.length+' presets correctamente.');
     }catch(err){alert('Error al importar: '+err.message);}
@@ -1948,14 +2217,14 @@ const STARTER_PRESETS=[
 ];
 
 function loadStarterPresets(){
-  const existing=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+  const existing=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
   if(existing.length>0) return; // only load if user has no presets yet
-  localStorage.setItem('psos13Presets',JSON.stringify(STARTER_PRESETS));
+  localStorage.setItem('psos14Presets',JSON.stringify(STARTER_PRESETS));
   renderPresets();
 }
 
 /* ══════════════════════════════════════════════════
-   PHOTO STUDIO OS v1.3 — FIX MEDIAS + SHARE
+   PHOTO STUDIO OS v1.4 — LEGWEAR + SHARE
 ══════════════════════════════════════════════════ */
 
 /* ── FIX: DALL·E n>1 (parallel calls, DALL·E 3 only supports n=1) ── */
@@ -2027,11 +2296,11 @@ async function generateDalle(){
 
 /* ── FIX: saveDalleToLibrary stores base64, never expires ── */
 function saveDalleToLibrary(dataUrl){
-  const results=JSON.parse(localStorage.getItem('psos13Results')||'[]');
+  const results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
   const prompt=el('output')?el('output').value:'';
   // Store full base64 — persists forever
   results.unshift({id:Date.now(),prompt:prompt.substring(0,200),url:dataUrl,notes:'Generado con DALL·E 3',score:0,date:new Date().toISOString(),cat:activeCat});
-  localStorage.setItem('psos13Results',JSON.stringify(results.slice(0,200)));
+  localStorage.setItem('psos14Results',JSON.stringify(results.slice(0,200)));
   renderResults();refreshAnalytics();
   alert('Guardado en biblioteca ✓ (imagen permanente en base64)');
 }
@@ -2121,10 +2390,10 @@ function toggleTheme(){
   document.body.classList.toggle('light-mode');
   const btn=document.querySelector('.theme-btn');
   if(btn) btn.textContent=document.body.classList.contains('light-mode')?'🌒':'🌙';
-  localStorage.setItem('psos13Theme',document.body.classList.contains('light-mode')?'light':'dark');
+  localStorage.setItem('psos14Theme',document.body.classList.contains('light-mode')?'light':'dark');
 }
 function loadTheme(){
-  if(localStorage.getItem('psos13Theme')==='light'){
+  if(localStorage.getItem('psos14Theme')==='light'){
     document.body.classList.add('light-mode');
     const btn=document.querySelector('.theme-btn');
     if(btn) btn.textContent='🌒';
@@ -2180,7 +2449,7 @@ async function copyNeg(){
 /* ── PRESET SEARCH (override renderPresets) ── */
 const _origRenderPresets=window.renderPresets;
 function renderPresets(){
-  const list=safeJSON('psos13Presets',[]);
+  const list=safeJSON('psos14Presets',[]);
   const t=el('presetList');
   const badge=el('presetCountBadge');
   if(!t)return;
@@ -2220,7 +2489,7 @@ function renderPresets(){
 
 /* ── PRESET VERSION HISTORY ── */
 function savePreset(){
-  const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
   const name=val('presetName')||'Preset sin nombre';
   // Check if same name exists → version it
   const existing=list.findIndex(p=>p.name===name);
@@ -2234,11 +2503,11 @@ function savePreset(){
   } else {
     list.unshift({name,date:new Date().toISOString(),state,versions:[]});
   }
-  localStorage.setItem('psos13Presets',JSON.stringify(list.slice(0,80)));
+  localStorage.setItem('psos14Presets',JSON.stringify(list.slice(0,80)));
   renderPresets();
 }
 function showVersions(idx){
-  const list=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
   const p=list[idx];if(!p||!p.versions||!p.versions.length){alert('Sin versiones anteriores.');return;}
   const names=p.versions.map((v,i)=>`v${i+1} · ${new Date(v.date).toLocaleString()}`).join('\n');
   const choice=prompt(`Versiones de "${p.name}":\n${names}\n\nEscribe el número (1-${p.versions.length}) para restaurar, o cancela:`);
@@ -2250,7 +2519,7 @@ function showVersions(idx){
     p.versions.unshift({state:current,date:p.date});
     p.state=p.versions.splice(vi+1,1)[0].state;
     p.date=new Date().toISOString();
-    localStorage.setItem('psos13Presets',JSON.stringify(list));
+    localStorage.setItem('psos14Presets',JSON.stringify(list));
     applyState(p.state);renderPresets();
   }
 }
@@ -2282,7 +2551,7 @@ function toggleResultsView(){
 
 /* ── RESULTS RENDER (upgraded) ── */
 function renderResults(){
-  const allResults=safeJSON('psos13Results',[]);
+  const allResults=safeJSON('psos14Results',[]);
   const minStar=parseInt(val('resultStarFilter')||'0');
   const catF=val('resultCatFilter')||'';
   const results=allResults.filter(r=>{
@@ -2346,14 +2615,14 @@ function initKanbanDnD(){
   });
 }
 function movePipelineToStage(id,stage){
-  const pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
   const item=pipeline.find(p=>p.id===id);
-  if(item&&PIPELINE_STAGES.includes(stage)){item.stage=stage;localStorage.setItem('psos13Pipeline',JSON.stringify(pipeline));renderPipeline();}
+  if(item&&PIPELINE_STAGES.includes(stage)){item.stage=stage;localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));renderPipeline();}
 }
 
 /* ── EXPORT PIPELINE ── */
 function exportPipeline(){
-  const pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
   if(!pipeline.length){alert('El pipeline está vacío.');return;}
   const blob=new Blob([JSON.stringify(pipeline,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -2381,10 +2650,10 @@ function backupAll(){
   const data={
     version:'psv9-backup-v1',
     date:new Date().toISOString(),
-    presets:JSON.parse(localStorage.getItem('psos13Presets')||'[]'),
-    pipeline:JSON.parse(localStorage.getItem('psos13Pipeline')||'[]'),
-    results:JSON.parse(localStorage.getItem('psos13Results')||'[]'),
-    history:JSON.parse(localStorage.getItem('psos13History')||'[]'),
+    presets:JSON.parse(localStorage.getItem('psos14Presets')||'[]'),
+    pipeline:JSON.parse(localStorage.getItem('psos14Pipeline')||'[]'),
+    results:JSON.parse(localStorage.getItem('psos14Results')||'[]'),
+    history:JSON.parse(localStorage.getItem('psos14History')||'[]'),
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -2402,10 +2671,10 @@ function doRestoreBackup(input){
       const data=JSON.parse(e.target.result);
       if(!data.version||!data.version.startsWith('psv9')){alert('Archivo de backup no válido.');return;}
       if(!confirm('¿Restaurar backup? Esto sobrescribirá presets, pipeline, biblioteca e historial actuales.'))return;
-      if(data.presets) localStorage.setItem('psos13Presets',JSON.stringify(data.presets));
-      if(data.pipeline) localStorage.setItem('psos13Pipeline',JSON.stringify(data.pipeline));
-      if(data.results) localStorage.setItem('psos13Results',JSON.stringify(data.results));
-      if(data.history) localStorage.setItem('psos13History',JSON.stringify(data.history));
+      if(data.presets) localStorage.setItem('psos14Presets',JSON.stringify(data.presets));
+      if(data.pipeline) localStorage.setItem('psos14Pipeline',JSON.stringify(data.pipeline));
+      if(data.results) localStorage.setItem('psos14Results',JSON.stringify(data.results));
+      if(data.history) localStorage.setItem('psos14History',JSON.stringify(data.history));
       renderPresets();renderPipeline();renderResults();renderHistory();refreshAnalytics();
       alert('✓ Backup restaurado correctamente ('+new Date(data.date).toLocaleString()+')');
     }catch(err){alert('Error al leer el backup: '+err.message);}
@@ -2570,7 +2839,7 @@ async function aiAction(mode){
       sys='Eres un experto en prompt engineering para generadores de imagen de IA. Reescribes prompts de fotografía para maximizar su efectividad y coherencia. Devuelves SOLO el prompt mejorado, sin explicaciones adicionales, listo para copiar.';
       usr=`Mejora y optimiza este prompt de fotografía de moda:\n\n"${prompt}"\n\nMantén la esencia pero:\n- Mejora la coherencia visual\n- Añade detalles técnicos de calidad fotográfica\n- Elimina redundancias\n- Estructura para máxima efectividad en IA generativa\nDevuelve SOLO el prompt mejorado.`;
     } else if(mode==='sugerir'){
-      const presets=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
+      const presets=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
       const presetSummary=presets.slice(0,15).map(p=>`- ${p.name} (${p.state&&p.state.cat||'?'})`).join('\n');
       sys='Eres un analista creativo de sesiones fotográficas. Analizas colecciones de presets y sugieres nuevas combinaciones que amplíen la variedad. Responde en español con formato estructurado.';
       usr=`Analiza estos presets guardados:\n${presetSummary||'(sin presets aún)'}\n\nSugiere 4 NUEVAS IDEAS de preset que:\n1. Complementen lo existente\n2. Exploren ángulos no cubiertos\n3. Sean coherentes con el estilo (fotografía profesional general, con senior photography como especialidad)\n\nPara cada idea:\nTÍTULO: [nombre del preset]\nCATEGORÍA: [cotidiana/gala/lenceria/disfraz/banyo/deporte]\nCONCEPTO: [descripción en 2 líneas]\nPOR QUÉ: [razón para añadirlo a tu colección]`;
@@ -2699,6 +2968,7 @@ function applyChatConfig(cfg){
     expression:'expression',bodytype:'bodytype',legtype:'legtype',legcolor:'legcolor',
     style:'style',ageRealism:'ageRealism',etnia:'etnia',tonoPiel:'tonoPiel',rasgos:'rasgos'};
   Object.entries(fieldMap).forEach(([cfgKey,fieldId])=>{if(cfg[cfgKey])setVal(fieldId,cfg[cfgKey]);});
+  applySubjectContext({preserveValues:false});
   updateEditorialUI();updateHairSwatch();updateLipSwatch();updateOutfitSwatch();updateLegSwatch();
   generate();
 }
@@ -2712,16 +2982,16 @@ function appendChatMsg(role,html){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-function clearChat(){chatHistory=[];localStorage.removeItem('psos13Chat');const m=el('chatMessages');if(m)m.innerHTML='<div class="chat-msg system">Chat reiniciado. Describe la sesión fotográfica que imaginas.</div>';}
-function saveChatHistory(){try{localStorage.setItem('psos13Chat',JSON.stringify(chatHistory.slice(-20)));}catch(e){}}
-function loadChatHistory(){try{const saved=JSON.parse(localStorage.getItem('psos13Chat')||'[]');if(saved.length){chatHistory=saved;const m=el('chatMessages');if(m){saved.forEach(msg=>{appendChatMsg(msg.role==='user'?'user':'ai','[Sesión anterior] '+msg.content.substring(0,120)+'…');});}}}catch(e){}}
+function clearChat(){chatHistory=[];localStorage.removeItem('psos14Chat');const m=el('chatMessages');if(m)m.innerHTML='<div class="chat-msg system">Chat reiniciado. Describe la sesión fotográfica que imaginas.</div>';}
+function saveChatHistory(){try{localStorage.setItem('psos14Chat',JSON.stringify(chatHistory.slice(-20)));}catch(e){}}
+function loadChatHistory(){try{const saved=JSON.parse(localStorage.getItem('psos14Chat')||'[]');if(saved.length){chatHistory=saved;const m=el('chatMessages');if(m){saved.forEach(msg=>{appendChatMsg(msg.role==='user'?'user':'ai','[Sesión anterior] '+msg.content.substring(0,120)+'…');});}}}catch(e){}}
 
 /* ── ANALYTICS ── */
 function refreshAnalytics(){
-  const hist=JSON.parse(localStorage.getItem('psos13History')||'[]');
-  const presets=JSON.parse(localStorage.getItem('psos13Presets')||'[]');
-  const pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
-  const results=JSON.parse(localStorage.getItem('psos13Results')||'[]');
+  const hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
+  const presets=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
+  const results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
   const setN=(id,v)=>{const n=el(id);if(n)n.textContent=v};
   setN('statPrompts',hist.length);
   setN('statPresets',presets.length);
@@ -2731,7 +3001,7 @@ function refreshAnalytics(){
   const cats={cotidiana:0,gala:0,lenceria:0,disfraz:0,banyo:0,deporte:0};
   presets.forEach(p=>{if(p.state&&p.state.cat&&cats.hasOwnProperty(p.state.cat))cats[p.state.cat]++;});
   const max=Math.max(...Object.values(cats),1);
-  const labels={cotidiana:'Cotidiana',gala:'Gala',lenceria:'Lencería',disfraz:'Disfraz',banyo:'Baño',deporte:'Deporte'};
+  const labels={cotidiana:'Casual',gala:'Formal',lenceria:'Layering',disfraz:'Character',banyo:'Resort',deporte:'Sport'};
   const chart=el('catBarChart');
   if(chart) chart.innerHTML=Object.entries(cats).map(([k,v])=>
     `<div class="bar-row"><span class="bar-label">${labels[k]}</span><div class="bar-track"><div class="bar-fill" data-bar-width="${Math.round(v/max*100)}"></div></div><span class="bar-val">${v}</span></div>`
@@ -2745,42 +3015,42 @@ const STAGE_LABELS={pending:'Pendiente',generated:'Generado',reviewed:'Revisado'
 function addToPipeline(){
   const prompt=el('output')?el('output').value:'';
   if(!prompt){alert('Genera un prompt primero.');return;}
-  const pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
   const name=prompt.substring(0,60)+'…';
   pipeline.unshift({id:Date.now(),name,prompt,stage:'pending',date:new Date().toISOString(),cat:activeCat,score:0});
-  localStorage.setItem('psos13Pipeline',JSON.stringify(pipeline.slice(0,100)));
+  localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline.slice(0,100)));
   renderPipeline();refreshAnalytics();
 }
 function advancePipeline(id){
-  const pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
   const item=pipeline.find(p=>p.id===id);
   if(!item)return;
   const idx=PIPELINE_STAGES.indexOf(item.stage);
   if(idx<PIPELINE_STAGES.length-1) item.stage=PIPELINE_STAGES[idx+1];
-  localStorage.setItem('psos13Pipeline',JSON.stringify(pipeline));
+  localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));
   renderPipeline();refreshAnalytics();
 }
 function deletePipeline(id){
-  let pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
+  let pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
   pipeline=pipeline.filter(p=>p.id!==id);
-  localStorage.setItem('psos13Pipeline',JSON.stringify(pipeline));
+  localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));
   renderPipeline();refreshAnalytics();
 }
 function setPipelineScore(id,score){
-  const pipeline=JSON.parse(localStorage.getItem('psos13Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
   const item=pipeline.find(p=>p.id===id);
-  if(item){item.score=score;localStorage.setItem('psos13Pipeline',JSON.stringify(pipeline));renderPipeline();}
+  if(item){item.score=score;localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));renderPipeline();}
 }
 function loadPipelinePrompt(id){
-  const pipeline=safeJSON('psos13Pipeline',[]);
+  const pipeline=safeJSON('psos14Pipeline',[]);
   const item=pipeline.find(p=>Number(p.id)===Number(id));
   if(!item)return;
   if(el('output')) el('output').value=String(item.prompt||'');
   updateTokenCounter(el('output').value);
 }
-function clearPipeline(){if(confirm('¿Vaciar todo el pipeline?')){localStorage.removeItem('psos13Pipeline');renderPipeline();refreshAnalytics();}}
+function clearPipeline(){if(confirm('¿Vaciar todo el pipeline?')){localStorage.removeItem('psos14Pipeline');renderPipeline();refreshAnalytics();}}
 function renderPipeline(){
-  const pipeline=safeJSON('psos13Pipeline',[]);
+  const pipeline=safeJSON('psos14Pipeline',[]);
   PIPELINE_STAGES.forEach(stage=>{
     const col=el('kCol-'+stage);
     const count=el('kCount-'+stage);
@@ -2819,21 +3089,21 @@ function saveResult(){
   const notes=val('resultNotes');
   const prompt=el('output')?el('output').value:'';
   if(!prompt&&!url){alert('Genera un prompt o añade una URL.');return;}
-  const results=JSON.parse(localStorage.getItem('psos13Results')||'[]');
+  const results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
   results.unshift({id:Date.now(),prompt:prompt.substring(0,200),url,notes,score:currentResultStar,date:new Date().toISOString(),cat:activeCat});
-  localStorage.setItem('psos13Results',JSON.stringify(results.slice(0,200)));
+  localStorage.setItem('psos14Results',JSON.stringify(results.slice(0,200)));
   setResultStar(0);
   if(el('resultUrl'))el('resultUrl').value='';
   if(el('resultNotes'))el('resultNotes').value='';
   renderResults();refreshAnalytics();
 }
 function deleteResult(id){
-  let results=JSON.parse(localStorage.getItem('psos13Results')||'[]');
+  let results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
   results=results.filter(r=>r.id!==id);
-  localStorage.setItem('psos13Results',JSON.stringify(results));
+  localStorage.setItem('psos14Results',JSON.stringify(results));
   renderResults();refreshAnalytics();
 }
-function resultById(id){return safeJSON('psos13Results',[]).find(r=>Number(r.id)===Number(id));}
+function resultById(id){return safeJSON('psos14Results',[]).find(r=>Number(r.id)===Number(id));}
 function openLightboxByResult(id){const r=resultById(id);if(r&&r.url)openLightbox(String(r.url));}
 function openResultURL(id){
   const r=resultById(id);if(!r||!r.url)return;
@@ -2842,12 +3112,13 @@ function openResultURL(id){
   try{const u=new URL(url);if(['https:','http:'].includes(u.protocol))window.open(u.href,'_blank','noopener,noreferrer');}
   catch(e){alert('URL no válida.');}
 }
-function clearResults(){if(confirm('¿Borrar toda la biblioteca de resultados?')){localStorage.removeItem('psos13Results');renderResults();refreshAnalytics();}}
+function clearResults(){if(confirm('¿Borrar toda la biblioteca de resultados?')){localStorage.removeItem('psos14Results');renderResults();refreshAnalytics();}}
 
 
 document.addEventListener('DOMContentLoaded',()=>{
   loadTheme();
   updateEditorialUI();
+  applySubjectContext({preserveValues:false,forceLegDefaults:true});
   updateHairSwatch();updateLipSwatch();updateOutfitSwatch();updateOutfitSwatch2();updateLegSwatch();updateTonoPielSwatch();
   loadStarterPresets();
   renderHistory();renderPresets();
@@ -2862,6 +3133,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(n.id==='keyAnthropic'||n.id==='keyGemini'||n.id==='keyOpenAI') return;
     if(n.id==='presetSearch'||n.id==='resultStarFilter'||n.id==='resultCatFilter') return;
     n.addEventListener('change',()=>{
+      if(n.id==='subjectType') applySubjectContext({preserveValues:false,forceLegDefaults:true});
       updateSkinSwatch();updateHairSwatch();updateLipSwatch();updateOutfitSwatch();updateOutfitSwatch2();updateLegSwatch();
       updateEditorialUI();scheduleLive();
     });

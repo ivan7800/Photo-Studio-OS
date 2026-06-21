@@ -1,7 +1,36 @@
-# Photo Studio OS v1.3 — AI Photography Director Suite
+# Photo Studio OS v1.4 — AI Photography Director Suite
 
 Estudio fotográfico web, offline-first y listo para GitHub Pages para diseñar prompts profesionales de fotografía IA.
 
+## Enfoque v1.4
+
+La app mantiene la identidad general de **Photo Studio OS** y añade una capa importante de coherencia UX: **ropa contextual según el tipo de sujeto**.
+
+Cuando eliges un sujeto femenino, masculino, no binario, corporativo, artista o senior, la app adapta automáticamente:
+
+- Categorías de ropa visibles.
+- Opciones de outfit.
+- Calzado.
+- Joyería y complementos.
+- Legwear / calcetería.
+- Texto de ayuda contextual.
+
+Así se evita el problema de seleccionar “modelo masculino adulto” y encontrar solo vestidos, lencería o medias como opciones principales.
+
+## Áreas cubiertas
+
+- Portrait
+- Fashion
+- Editorial
+- Lifestyle
+- Beauty
+- Menswear
+- Corporate portrait
+- Commercial
+- Sportswear
+- Resort / swim
+- Senior Photography como especialidad interna
+- Pipeline, analítica, A/B testing y biblioteca de resultados
 
 ## Seguridad
 

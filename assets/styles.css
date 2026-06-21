@@ -592,3 +592,8 @@ kbd{background:var(--s2);border:1px solid var(--border2);border-radius:4px;paddi
 .secure-note{border:1px solid rgba(82,184,174,.24);background:rgba(82,184,174,.08);color:var(--teal);border-radius:12px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:.68rem;line-height:1.55;margin-top:10px}
 
 [data-u-style="u069"]{color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:.75rem}
+
+/* ── CONTEXTUAL WARDROBE HINT v1.4 ── */
+.context-hint{border:1px solid rgba(82,184,174,.22);background:rgba(82,184,174,.07);color:var(--teal);border-radius:12px;padding:9px 12px;margin:0 0 10px;font-family:'JetBrains Mono',monospace;font-size:.68rem;line-height:1.55}
+.context-hint strong{color:var(--gold2)}
+body.light-mode .context-hint{background:rgba(82,184,174,.1)}
