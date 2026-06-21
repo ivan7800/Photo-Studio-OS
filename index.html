@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: https:; connect-src https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; style-src 'self'; script-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"/>
+<title>Photo Studio OS v1.3 · AI Photography Director Suite</title>
+<link rel="stylesheet" href="assets/styles.css"/>
+
+</head>
+<body>
+<div class="app">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eye">Photo Studio OS · v1.3 · AI Photography Director Suite</div>
+  <h1>Photo Studio OS<br><em>AI Photography Director</em></h1>
+  <p class="hero-sub">Suite profesional para diseñar retratos, moda, editorial, lifestyle, beauty, senior photography, campañas comerciales y proyectos visuales asistidos por IA.</p>
+  <div class="htags">
+    <span class="htag htag-gold">Portrait</span>
+    <span class="htag htag-teal">Fashion</span>
+    <span class="htag htag-rose">Editorial</span>
+    <span class="htag htag-gold">Lifestyle</span>
+    <span class="htag htag-lav">Beauty</span>
+    <span class="htag htag-teal">Senior Photography</span>
+    <span class="htag htag-rose">Commercial</span>
+    <span class="htag htag-gold">AI Studio</span>
+    <span class="htag htag-lav">A/B Testing · Pipeline</span>
+    <span class="htag htag-teal">GitHub Ready</span>
+  </div>
+</section>
+
+<!-- ══ API KEYS PANEL ══ -->
+<section class="api-panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">🔑</span>API Keys · Conexión IA</div>
+  <p data-u-style="u002">
+    Las keys se guardan solo durante esta sesión del navegador (sessionStorage). Al usar funciones IA se envían directamente al proveedor elegido: Anthropic, Gemini u OpenAI. Para máxima seguridad, usa keys con límites de gasto y bórralas al terminar.
+  </p>
+  <div class="secure-note">Modo GitHub endurecido: JS/CSS externos, CSP endurecida, keys solo de sesión y tests E2E incluidos. Pensado como estudio fotográfico general, no como nicho único.</div>
+  <div class="api-key-row">
+    <span class="api-provider-badge api-anthropic">Anthropic</span>
+    <input class="api-key-input" id="keyAnthropic" type="password" placeholder="sk-ant-api03-..." data-oninput="saveKeys();updateKeyStatus()"/>
+    <button class="api-toggle-btn" data-onclick="toggleKeyVis('keyAnthropic',this)">👁 Ver</button>
+    <div class="api-status empty" id="statusAnthropic"></div>
+  </div>
+  <div class="api-key-row">
+    <span class="api-provider-badge api-gemini">Gemini</span>
+    <input class="api-key-input" id="keyGemini" type="password" placeholder="AIzaSy..." data-oninput="saveKeys();updateKeyStatus()"/>
+    <button class="api-toggle-btn" data-onclick="toggleKeyVis('keyGemini',this)">👁 Ver</button>
+    <div class="api-status empty" id="statusGemini"></div>
+  </div>
+  <div class="api-key-row">
+    <span class="api-provider-badge api-openai">OpenAI</span>
+    <input class="api-key-input" id="keyOpenAI" type="password" placeholder="sk-proj-..." data-oninput="saveKeys();updateKeyStatus()"/>
+    <button class="api-toggle-btn" data-onclick="toggleKeyVis('keyOpenAI',this)">👁 Ver</button>
+    <div class="api-status empty" id="statusOpenAI"></div>
+  </div>
+  <div data-u-style="u003">
+    <label data-u-style="u004">Modelo activo:</label>
+    <select class="api-model-select" id="activeModel" data-u-style="u005" data-onchange="saveKeys()">
+      <optgroup label="── Anthropic ──">
+        <option value="anthropic|claude-sonnet-4-20250514">Claude Sonnet 4</option>
+        <option value="anthropic|claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+      </optgroup>
+      <optgroup label="── Gemini ──">
+        <option value="gemini|gemini-2.0-flash">Gemini 2.0 Flash</option>
+        <option value="gemini|gemini-1.5-pro">Gemini 1.5 Pro</option>
+      </optgroup>
+      <optgroup label="── OpenAI ──">
+        <option value="openai|gpt-4o">GPT-4o</option>
+        <option value="openai|gpt-4o-mini">GPT-4o Mini</option>
+      </optgroup>
+    </select>
+    <button class="bg" data-u-style="u006" data-onclick="clearKeys()">🗑 Borrar keys de sesión</button>
+  </div>
+</section>
+
+<section class="panel">
+
+<!-- ①  PERSONA -->
+<div class="sec"><span class="sec-n">01</span>Persona / modelo</div>
+<div class="g4">
+  <div class="box">
+    <label>Edad</label>
+    <select id="age">
+      <option>18 años</option><option>21 años</option><option>25 años</option>
+      <option>30 años</option><option selected>35 años</option><option>40 años</option>
+      <option>50 años</option><option>60 años</option><option>70 años</option>
+      <option>80 años</option><option>Custom</option>
+    </select>
+    <input id="customAge" placeholder="ej: 45 años"/>
+  </div>
+  <div class="box">
+    <label>Tipo de sujeto</label>
+    <select id="subjectType">
+      <option value="persona adulta" selected>Persona adulta</option>
+      <option value="modelo adulta">Modelo femenina adulta</option>
+      <option value="modelo adulto">Modelo masculino adulto</option>
+      <option value="persona adulta no binaria">Persona no binaria adulta</option>
+      <option value="retrato corporativo adulto">Retrato corporativo</option>
+      <option value="artista adulto">Artista / creador adulto</option>
+      <option value="modelo senior">Senior Photography</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Realismo facial</label>
+    <select id="ageRealism">
+      <option value="soft" selected>Natural coherente</option>
+      <option value="real">Realista visible</option>
+      <option value="premium">Editorial premium</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Tipo físico</label>
+    <select id="bodytype">
+      <option value="">No especificar</option>
+      <option value="figura esbelta y elegante">Esbelta elegante</option>
+      <option value="figura curvilínea con naturalidad">Curvilínea natural</option>
+      <option value="figura atlética natural">Atlética natural</option>
+      <option value="figura plena y natural">Plena natural</option>
+      <option value="figura delgada de hueso fino">Delgada fina</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Coherencia de edad</label>
+    <select id="antiAge">
+      <option value="on" selected>Mantener edad seleccionada</option>
+      <option value="off">Sin forzar</option>
+    </select>
+  </div>
+</div>
+
+
+<!-- ①b ETNIA / TONO DE PIEL -->
+<div class="sec"><span class="sec-n">01b</span>Etnia · Tono de piel</div>
+<div class="g3">
+  <div class="box">
+    <label>Etnia / origen</label>
+    <select id="etnia">
+      <option value="">No especificar</option>
+      <optgroup label="── Europa ──">
+        <option value="persona de origen europeo caucásico">Europea caucásica</option>
+        <option value="persona de origen mediterráneo, piel olivácea natural">Mediterránea</option>
+        <option value="persona de origen nórdico, piel muy clara y pelo claro">Nórdica</option>
+        <option value="persona de origen eslavo, piel pálida con rasgos eslavos">Eslava</option>
+      </optgroup>
+      <optgroup label="── América Latina ──">
+        <option value="persona latina de origen sudamericano">Latina/o sudamericana/o</option>
+        <option value="persona latina de origen centroamericano, rasgos mestizos">Latina/o mestiza/o</option>
+        <option value="persona de origen afrolatino, piel morena cálida">Afrolatina/o</option>
+      </optgroup>
+      <optgroup label="── África ──">
+        <option value="persona de origen afrocaribeño, piel negra profunda y luminosa">Afrocaribeña</option>
+        <option value="persona de origen africano subsahariano, piel negra oscura">Africana subsahariana</option>
+        <option value="persona de origen norteafricano, piel morena dorada">Norteafricana</option>
+      </optgroup>
+      <optgroup label="── Asia ──">
+        <option value="persona de origen asiático oriental, rasgos coreanos o japoneses">Asiática oriental</option>
+        <option value="persona de origen del sudeste asiático, piel bronceada dorada">Sudeste asiático</option>
+        <option value="persona de origen indio, piel morena cálida con rasgos sudasiáticos">India / sudasiática</option>
+      </optgroup>
+      <optgroup label="── Oriente Medio ──">
+        <option value="persona de origen árabe, piel morena clara con rasgos mediterráneos">Árabe / Oriente Medio</option>
+        <option value="persona de origen persa, piel dorada con rasgos persas elegantes">Persa / iraní</option>
+      </optgroup>
+      <option value="Custom">Custom</option>
+    </select>
+    <input id="customEtnia" placeholder="ej: origen mediterráneo, brasileño, sudasiático..."/>
+  </div>
+  <div class="box">
+    <label>Tono de piel</label>
+    <select id="tonoPiel" data-onchange="updateTonoPielSwatch()">
+      <option value="">No especificar</option>
+      <option value="piel muy clara tipo I casi sin melanina" data-hex="#fde8d8">Muy clara (tipo I)</option>
+      <option value="piel clara con ligero tono rosado tipo II" data-hex="#f5cba7">Clara rosada (tipo II)</option>
+      <option value="piel beige claro natural tipo II-III" data-hex="#e8b88a">Beige clara (tipo II-III)</option>
+      <option value="piel beige dorado medio tipo III" data-hex="#d4956a">Beige dorada (tipo III)</option>
+      <option value="piel olivácea natural tipo III-IV" data-hex="#c07850">Olivácea (tipo III-IV)</option>
+      <option value="piel morena clara dorada tipo IV" data-hex="#a05c38">Morena dorada (tipo IV)</option>
+      <option value="piel morena media tipo IV-V" data-hex="#884428">Morena media (tipo IV-V)</option>
+      <option value="piel morena oscura tipo V" data-hex="#6a3020">Morena oscura (tipo V)</option>
+      <option value="piel negra cálida tipo VI" data-hex="#4a2010">Negra cálida (tipo VI)</option>
+      <option value="piel negra profunda tipo VI muy oscuro" data-hex="#2a1008">Negra profunda (tipo VI)</option>
+    </select>
+    <div class="color-row"><div class="swatch" id="tonoPielSwatch" data-u-style="u007"></div><span id="tonoPielSwatchLabel" data-u-style="u008">—</span></div>
+  </div>
+  <div class="box">
+    <label>Rasgos faciales</label>
+    <select id="rasgos">
+      <option value="">No especificar</option>
+      <option value="rasgos delicados y armoniosos">Delicados armoniosos</option>
+      <option value="rasgos fuertes y definidos con personalidad">Fuertes y definidos</option>
+      <option value="rasgos suaves y redondeados, cara ovalada">Suaves redondeados</option>
+      <option value="rasgos angulares con pómulos marcados">Angulares, pómulos altos</option>
+      <option value="rasgos exóticos con ojos almendrados">Exóticos almendrados</option>
+      <option value="rasgos clásicos equilibrados, belleza universal">Clásicos equilibrados</option>
+      <option value="rasgos expresivos con ojos grandes llamativos">Expresivos, ojos grandes</option>
+    </select>
+  </div>
+</div>
+
+<!-- ②  CABELLO -->
+<div class="sec"><span class="sec-n">02</span>Cabello</div>
+<div class="g4">
+  <div class="box">
+    <label>Longitud / estilo</label>
+    <select id="hairStyle">
+      <option value="">No especificar</option>
+      <optgroup label="── Corto ──">
+        <option value="pelo corto pixie elegante">Pixie elegante</option>
+        <option value="pelo corto peinado con volumen">Corto con volumen</option>
+        <option value="pelo corto liso y pulido">Corto liso pulido</option>
+        <option value="pelo corto ondulado natural">Corto ondulado</option>
+      </optgroup>
+      <optgroup label="── Media melena ──">
+        <option value="media melena lisa y brillante">Media melena lisa</option>
+        <option value="media melena ondulada natural">Media melena ondulada</option>
+        <option value="media melena con capas suaves">Media melena con capas</option>
+        <option value="media melena recta con flequillo lateral">Media melena con flequillo</option>
+      </optgroup>
+      <optgroup label="── Largo ──">
+        <option value="pelo largo liso y brillante">Largo liso</option>
+        <option value="pelo largo ondulado con volumen">Largo ondulado</option>
+        <option value="pelo largo con rizos suaves">Largo con rizos</option>
+      </optgroup>
+      <optgroup label="── Recogidos ──">
+        <option value="moño bajo elegante">Moño bajo elegante</option>
+        <option value="moño alto clásico">Moño alto clásico</option>
+        <option value="recogido informal con mechones sueltos">Recogido informal</option>
+        <option value="trenza lateral suave">Trenza lateral</option>
+        <option value="semirrecogido con ondas">Semirrecogido con ondas</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="box">
+    <label>Color de cabello</label>
+    <select id="hairColor" data-onchange="updateHairSwatch()">
+      <option value="">No especificar</option>
+      <option value="cabello blanco puro elegante" data-hex="#f5f5f5">Blanco puro</option>
+      <option value="cabello blanco plateado con brillo" data-hex="#d8d8e8">Blanco plateado</option>
+      <option value="cabello gris plata elegante" data-hex="#a0a0b8">Gris plata</option>
+      <option value="cabello gris oscuro natural" data-hex="#707080">Gris oscuro</option>
+      <option value="cabello rubio claro natural" data-hex="#e8d090">Rubio claro</option>
+      <option value="cabello rubio dorado" data-hex="#d4a840">Rubio dorado</option>
+      <option value="cabello rubio platino" data-hex="#f0e8c0">Rubio platino</option>
+      <option value="cabello castaño claro" data-hex="#a07840">Castaño claro</option>
+      <option value="cabello castaño oscuro natural" data-hex="#604020">Castaño oscuro</option>
+      <option value="cabello negro natural" data-hex="#1a1010">Negro natural</option>
+      <option value="cabello rojizo cobrizo natural" data-hex="#c04820">Rojizo cobrizo</option>
+      <option value="cabello con mechas plateadas naturales" data-hex="#c0c0d0">Mechas plateadas</option>
+      <option value="cabello con mechas doradas" data-hex="#d0a850">Mechas doradas</option>
+      <option value="cabello con raíz natural gris visible" data-hex="#909090">Raíz gris visible</option>
+    </select>
+    <div class="color-row"><div class="swatch" id="hairSwatch" data-u-style="u009"></div><span id="hairSwatchLabel" data-u-style="u008">—</span></div>
+  </div>
+  <div class="box">
+    <label>Acabado / textura</label>
+    <select id="hairFinish">
+      <option value="">Sin especificar</option>
+      <option value="brillante y saludable">Brillante saludable</option>
+      <option value="mate natural">Mate natural</option>
+      <option value="con volumen natural">Con volumen natural</option>
+      <option value="con efecto húmedo suave">Efecto húmedo suave</option>
+      <option value="con textura natural sin peinar excesivo">Textura natural sin peinar</option>
+      <option value="muy cuidado y peinado">Muy cuidado y peinado</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Accesorio de cabello</label>
+    <select id="hairAcc">
+      <option value="">Sin accesorio</option>
+      <option value="con diadema discreta">Diadema discreta</option>
+      <option value="con pasador dorado elegante">Pasador dorado</option>
+      <option value="con horquillas de nácar">Horquillas nácar</option>
+      <option value="con pañuelo de seda en el cabello">Pañuelo de seda</option>
+      <option value="con tiara fina de cristal">Tiara fina</option>
+      <option value="con flor natural en el cabello">Flor natural</option>
+      <option value="con redecilla elegante tipo vintage">Redecilla vintage</option>
+    </select>
+  </div>
+</div>
+
+<!-- ③  MAQUILLAJE -->
+<div class="sec"><span class="sec-n">03</span>Maquillaje</div>
+<div class="g4">
+  <div class="box">
+    <label>Look facial</label>
+    <select id="makeupLook">
+      <option value="">Sin especificar</option>
+      <option value="maquillaje natural suave, piel luminosa">Natural suave</option>
+      <option value="maquillaje minimal, base uniforme y labios nude">Minimal nude</option>
+      <option value="maquillaje clásico con labios rojos y piel perfecta">Labios rojos clásico</option>
+      <option value="maquillaje smoky eye suave con labios nude">Smoky eye suave</option>
+      <option value="maquillaje editorial de moda, ojos marcados">Editorial marcado</option>
+      <option value="maquillaje de noche elegante, ojos ahumados y labios oscuros">Noche elegante</option>
+      <option value="maquillaje fresco sin retoque visible">Fresco sin retoque</option>
+      <option value="sin maquillaje visible, piel natural real">Sin maquillaje</option>
+      <option value="maquillaje vintage pin-up, labios rojos y delineado felino">Vintage pin-up</option>
+      <option value="maquillaje tono bronce y dorado">Bronce dorado</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Color de labios</label>
+    <select id="lipColor" data-onchange="updateLipSwatch()">
+      <option value="">Sin especificar</option>
+      <option value="labios rojos clásicos" data-hex="#cc2020">Rojo clásico</option>
+      <option value="labios rojo oscuro tipo vino" data-hex="#800020">Rojo vino</option>
+      <option value="labios burdeos" data-hex="#6a1020">Burdeos</option>
+      <option value="labios nude natural" data-hex="#c89070">Nude natural</option>
+      <option value="labios nude rosado" data-hex="#d8a090">Nude rosado</option>
+      <option value="labios rosa suave" data-hex="#e090a0">Rosa suave</option>
+      <option value="labios coral" data-hex="#d06040">Coral</option>
+      <option value="labios malva" data-hex="#a06080">Malva</option>
+      <option value="labios ciruela oscuro" data-hex="#601040">Ciruela oscuro</option>
+      <option value="labios gloss transparente" data-hex="#e8e0d8">Gloss transparente</option>
+    </select>
+    <div class="color-row"><div class="swatch" id="lipSwatch" data-u-style="u009"></div><span id="lipSwatchLabel" data-u-style="u008">—</span></div>
+  </div>
+  <div class="box">
+    <label>Ojos</label>
+    <select id="eyeMakeup">
+      <option value="">Sin especificar</option>
+      <option value="ojos con máscara de pestañas natural">Máscara natural</option>
+      <option value="ojos con delineado negro fino clásico">Delineado negro fino</option>
+      <option value="ojos con delineado felino tipo cat-eye">Cat-eye delineado</option>
+      <option value="ojos ahumados marrones suaves">Ahumado marrón suave</option>
+      <option value="ojos ahumados negros intensos">Ahumado negro intenso</option>
+      <option value="ojos con sombra dorada editorial">Sombra dorada</option>
+      <option value="pestañas postizas discretas">Pestañas postizas</option>
+      <option value="ojos claros sin maquillaje, pestañas naturales">Ojos naturales</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Piel</label>
+    <select id="skinLook">
+      <option value="">Sin especificar</option>
+      <option value="piel luminosa con base suave">Luminosa con base</option>
+      <option value="piel mate con polvo fijador">Mate con polvo</option>
+      <option value="piel con acabado satinado natural">Satinado natural</option>
+      <option value="piel natural sin base, textura real visible">Natural sin base</option>
+      <option value="piel bronceada con iluminador suave">Bronceada iluminada</option>
+      <option value="piel muy pálida con acabado porcelana">Porcelana pálida</option>
+    </select>
+  </div>
+</div>
+
+<!-- ④  COLOR DE ROPA -->
+<div class="sec"><span class="sec-n">04</span>Color y patrón de ropa</div>
+<div class="g4">
+  <div class="box">
+    <label>Color principal</label>
+    <select id="outfitColor" data-onchange="updateOutfitSwatch()">
+      <option value="">No especificar (usar el del nombre)</option>
+      <optgroup label="── Neutros ──">
+        <option value="negro" data-hex="#111111">Negro</option>
+        <option value="blanco" data-hex="#f5f5f5">Blanco</option>
+        <option value="crema" data-hex="#f0ead0">Crema</option>
+        <option value="beige" data-hex="#d4b896">Beige</option>
+        <option value="nude" data-hex="#c8a880">Nude</option>
+        <option value="gris claro" data-hex="#c0c0c0">Gris claro</option>
+        <option value="gris oscuro" data-hex="#606060">Gris oscuro</option>
+        <option value="gris perla" data-hex="#d8d8e0">Gris perla</option>
+      </optgroup>
+      <optgroup label="── Cálidos ──">
+        <option value="rojo" data-hex="#cc2020">Rojo</option>
+        <option value="rojo vino" data-hex="#7a1020">Rojo vino</option>
+        <option value="burdeos" data-hex="#6a1020">Burdeos</option>
+        <option value="coral" data-hex="#d06040">Coral</option>
+        <option value="naranja suave" data-hex="#d08040">Naranja suave</option>
+        <option value="terracota" data-hex="#b06040">Terracota</option>
+        <option value="dorado" data-hex="#c8a040">Dorado</option>
+        <option value="champagne" data-hex="#e8d898">Champagne</option>
+        <option value="camel" data-hex="#c09060">Camel</option>
+      </optgroup>
+      <optgroup label="── Fríos ──">
+        <option value="azul marino" data-hex="#182060">Azul marino</option>
+        <option value="azul cielo" data-hex="#6090c8">Azul cielo</option>
+        <option value="azul real" data-hex="#2040a0">Azul real</option>
+        <option value="azul noche" data-hex="#101838">Azul noche</option>
+        <option value="turquesa" data-hex="#30b0a0">Turquesa</option>
+        <option value="verde esmeralda" data-hex="#186040">Verde esmeralda</option>
+        <option value="verde botella" data-hex="#204820">Verde botella</option>
+        <option value="verde oliva" data-hex="#606020">Verde oliva</option>
+        <option value="verde menta" data-hex="#80c090">Verde menta</option>
+      </optgroup>
+      <optgroup label="── Morados / rosas ──">
+        <option value="lila" data-hex="#b090d0">Lila</option>
+        <option value="malva" data-hex="#906080">Malva</option>
+        <option value="morado" data-hex="#602080">Morado</option>
+        <option value="lavanda" data-hex="#c0a8e0">Lavanda</option>
+        <option value="rosa suave" data-hex="#e8a0b8">Rosa suave</option>
+        <option value="rosa fucsia" data-hex="#d03080">Rosa fucsia</option>
+        <option value="rosa palo" data-hex="#e8b8c0">Rosa palo</option>
+      </optgroup>
+      <optgroup label="── Metálicos ──">
+        <option value="plateado" data-hex="#b0b8c8">Plateado</option>
+        <option value="bronce" data-hex="#a07040">Bronce</option>
+        <option value="cobre" data-hex="#b06030">Cobre</option>
+      </optgroup>
+    </select>
+    <div class="color-row">
+      <div class="swatch" id="outfitSwatch" data-u-style="u010"></div>
+      <span id="outfitSwatchLabel" data-u-style="u008">—</span>
+    </div>
+  </div>
+  <div class="box">
+    <label>Color secundario / combinación</label>
+    <select id="outfitColor2" data-onchange="updateOutfitSwatch2()">
+      <option value="">Sin segundo color</option>
+      <option value="con detalles blancos" data-hex="#f5f5f5">Detalles blancos</option>
+      <option value="con detalles negros" data-hex="#111111">Detalles negros</option>
+      <option value="con detalles dorados" data-hex="#c8a040">Detalles dorados</option>
+      <option value="con detalles plateados" data-hex="#b0b8c8">Detalles plateados</option>
+      <option value="con vivos rojos" data-hex="#cc2020">Vivos rojos</option>
+      <option value="con vivos burdeos" data-hex="#6a1020">Vivos burdeos</option>
+      <option value="con ribete de encaje negro" data-hex="#222222">Ribete encaje negro</option>
+      <option value="con ribete de encaje crema" data-hex="#f0ead0">Ribete encaje crema</option>
+      <option value="bicolor con panel frontal más oscuro" data-hex="#505050">Bicolor frontal</option>
+      <option value="con fajín o cinturón en contraste" data-hex="#808080">Fajín contraste</option>
+    </select>
+    <div class="color-row">
+      <div class="swatch" id="outfitSwatch2" data-u-style="u011"></div>
+      <span id="outfitSwatchLabel2" data-u-style="u008">—</span>
+    </div>
+  </div>
+  <div class="box">
+    <label>Patrón / estampado</label>
+    <select id="outfitPattern">
+      <option value="">Sólido / sin estampado</option>
+      <option value="con estampado floral suave">Floral suave</option>
+      <option value="con estampado floral grande editorial">Floral grande editorial</option>
+      <option value="con estampado de rayas verticales finas">Rayas verticales finas</option>
+      <option value="con estampado de rayas horizontales">Rayas horizontales</option>
+      <option value="con estampado de cuadros tipo vichy">Cuadros vichy</option>
+      <option value="con estampado de cuadros príncipe de Gales">Príncipe de Gales</option>
+      <option value="con estampado de lunares pequeños">Lunares pequeños</option>
+      <option value="con estampado de lunares grandes">Lunares grandes</option>
+      <option value="con estampado animal print leopardo">Animal print leopardo</option>
+      <option value="con estampado animal print cebra">Animal print cebra</option>
+      <option value="con estampado de encaje en superficie">Encaje en superficie</option>
+      <option value="con tejido de punto visible">Tejido de punto visible</option>
+      <option value="con estampado geométrico abstracto">Geométrico abstracto</option>
+      <option value="con estampado de damasco elegante">Damasco elegante</option>
+      <option value="con textura de terciopelo">Textura terciopelo</option>
+      <option value="con textura satinada brillante">Textura satinada</option>
+      <option value="con estampado tropical">Tropical</option>
+      <option value="con estampado de paisley elegante">Paisley elegante</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Tejido / material</label>
+    <select id="outfitFabric">
+      <option value="">Sin especificar</option>
+      <option value="de seda natural">Seda natural</option>
+      <option value="de satén">Satén</option>
+      <option value="de terciopelo">Terciopelo</option>
+      <option value="de encaje">Encaje</option>
+      <option value="de lino natural">Lino natural</option>
+      <option value="de algodón suave">Algodón suave</option>
+      <option value="de punto fino">Punto fino</option>
+      <option value="de tul vaporoso">Tul vaporoso</option>
+      <option value="de gasa ligera">Gasa ligera</option>
+      <option value="de cuero suave">Cuero suave</option>
+      <option value="de tejido técnico premium">Tejido técnico premium</option>
+      <option value="de organza">Organza</option>
+    </select>
+  </div>
+</div>
+
+<!-- ⑤  CATEGORÍA DE ROPA -->
+<div class="sec"><span class="sec-n">05</span>Categoría de ropa</div>
+<div class="cat-tabs" id="catTabs">
+  <button class="cat-tab active" data-onclick="switchCat('cotidiana',this)">🏠 Casa · Cotidiana</button>
+  <button class="cat-tab" data-onclick="switchCat('gala',this)">✨ Gala · Fiesta</button>
+  <button class="cat-tab" data-onclick="switchCat('lenceria',this)">🌹 Lencería editorial</button>
+  <button class="cat-tab" data-onclick="switchCat('disfraz',this)">🎭 Disfraces</button>
+  <button class="cat-tab" data-onclick="switchCat('banyo',this)">🏖️ Baño · Playa</button>
+  <button class="cat-tab" data-onclick="switchCat('deporte',this)">⚡ Deportivo</button>
+</div>
+
+<!-- PANEL COTIDIANA -->
+<div class="outfit-panel active" id="cat-cotidiana">
+  <div class="g2">
+    <div class="box">
+      <label>Ropa casa · cotidiana · elegante</label>
+      <select id="outfit-cotidiana">
+        <optgroup label="── Vestidos ──">
+          <option selected>vestido ajustado tipo bodycon</option>
+          <option>vestido negro minimalista</option>
+          <option>vestido elegante sin especificar color</option>
+          <option>vestido de tirantes finos</option>
+          <option>vestido satinado tipo cóctel</option>
+          <option>vestido midi de punto suave</option>
+          <option>vestido envolvente tipo wrap</option>
+          <option>vestido floral suave estilo verano elegante</option>
+          <option>vestido de seda natural con tirantes finos</option>
+          <option>vestido asimétrico elegante</option>
+          <option>vestido ajustado con escote discreto</option>
+          <option>vestido satinado con abertura lateral sutil</option>
+          <option>vestido corto con caída natural</option>
+        </optgroup>
+        <optgroup label="── Interiores ──">
+          <option>bata ligera de casa sobre prenda discreta</option>
+          <option>bata satinada elegante sobre camisón</option>
+          <option>bata con cinturón</option>
+          <option>kimono sedoso sobre body discreto</option>
+          <option>pijama satinado premium pantalón y camisa</option>
+          <option>conjunto loungewear elegante ajustado</option>
+          <option>camisón satinado con encaje discreto</option>
+        </optgroup>
+        <optgroup label="── Conjuntos ──">
+          <option>conjunto sastre moderno</option>
+          <option>top satinado con falda elegante</option>
+          <option>blusa ligera semitransparente con falda midi</option>
+          <option>falda lápiz con blusa ajustada</option>
+          <option>blusa de seda con pantalón palazzo</option>
+          <option>traje pantalón de lino</option>
+          <option>conjunto blazer satinado con pantalón ajustado</option>
+          <option>jeans elegantes de corte recto con blusa satinada</option>
+        </optgroup>
+        <option>Custom</option>
+      
+        <optgroup label="── Chic urbano ──">
+          <option>abrigo largo de cashmere sobre conjunto discreto</option>
+          <option>vestido camisero de seda con cinturón fino</option>
+          <option>conjunto de punto con falda midi y jersey fino</option>
+          <option>vestido de terciopelo midi ajustado para tarde</option>
+          <option>traje chaqueta de tweed con falda tubo</option>
+          <option>pantalón de cuero suave con blusa de seda</option>
+          <option>conjunto de cuero sintético con top y falda midi</option>
+        </optgroup>
+        <option>Custom</option>
+      </select>
+      <input id="customOutfit-cotidiana" placeholder="Custom ropa cotidiana"/>
+    </div>
+    <div class="box">
+      <label>Detalle de corte / escote</label>
+      <select id="outfitDetail">
+        <option value="">Sin detalle extra</option>
+        <option value="con escote en V elegante">Escote en V elegante</option>
+        <option value="con escote barco sutil">Escote barco</option>
+        <option value="con escote cuadrado">Escote cuadrado</option>
+        <option value="con escote off-shoulder">Off-shoulder</option>
+        <option value="con tirantes finos">Tirantes finos</option>
+        <option value="sin mangas">Sin mangas</option>
+        <option value="con manga francesa">Manga francesa</option>
+        <option value="con abertura en espalda discreta">Abertura en espalda</option>
+        <option value="con abertura lateral hasta muslo">Abertura lateral muslo</option>
+        <option value="con caída suelta y natural">Caída suelta natural</option>
+        <option value="con tejido ceñido al cuerpo">Tejido ceñido</option>
+        <option value="semitransparente en hombros">Semitransparente hombros</option>
+        <option value="con encaje discreto en el borde">Encaje en borde</option>
+        <option value="ceñida a la cintura con cinturón fino">Ceñida con cinturón</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL GALA -->
+<div class="outfit-panel" id="cat-gala">
+  <div class="g2">
+    <div class="box">
+      <label>Ropa de gala · fiesta formal</label>
+      <select id="outfit-gala">
+        <optgroup label="── Vestidos largos ──">
+          <option selected>vestido de noche largo con escote elegante</option>
+          <option>vestido largo de satén tipo Audrey Hepburn</option>
+          <option>vestido de gala con cola discreta</option>
+          <option>vestido largo con detalles de brillo suave</option>
+          <option>vestido largo con drapeado elegante</option>
+          <option>vestido largo de tul con lencería discreta debajo</option>
+          <option>vestido largo de noche con abertura lateral</option>
+          <option>vestido largo con escote en V</option>
+          <option>vestido largo con corte sirena</option>
+        </optgroup>
+        <optgroup label="── Cóctel / midi ──">
+          <option>vestido de cóctel corto tipo little black dress</option>
+          <option>vestido midi de fiesta con lentejuelas discretas</option>
+          <option>vestido satinado corte asimétrico</option>
+          <option>vestido cóctel con encaje en mangas</option>
+          <option>vestido cóctel de terciopelo</option>
+          <option>vestido midi de fiesta con drapeado lateral</option>
+        </optgroup>
+        <optgroup label="── Conjuntos formales ──">
+          <option>mono elegante de seda para noche</option>
+          <option>conjunto de pantalón wide-leg y top drapeado para fiesta</option>
+          <option>traje blazer de lentejuelas finas con pantalón negro</option>
+          <option>kimono de gala sobre vestido ajustado</option>
+        </optgroup>
+        <optgroup label="── Alta costura ──">
+          <option>vestido de gala con escote asimétrico y un hombro descubierto</option>
+          <option>vestido largo de gasa plisada con efecto vaporoso luminoso</option>
+          <option>vestido de noche con capa drapeada sobre el hombro</option>
+          <option>vestido largo de brocado dorado con mangas largas</option>
+          <option>vestido estructurado de organza con volumen en cadera</option>
+          <option>conjunto de palazzo de seda con top bustier</option>
+          <option>vestido minimal de crepé negro con un detalle joya</option>
+        </optgroup>
+        <option>Custom</option>
+      </select>
+      <input id="customOutfit-gala" placeholder="Custom gala"/>
+    </div>
+    <div class="box">
+      <label>Detalles gala</label>
+      <select id="galaDetail">
+        <option value="">Sin detalle extra</option>
+        <option value="con escote en V profundo pero elegante">Escote V profundo</option>
+        <option value="con espalda descubierta elegante">Espalda descubierta</option>
+        <option value="con abertura lateral hasta el muslo">Abertura muslo</option>
+        <option value="con cola corta y elegante">Cola corta</option>
+        <option value="con drapeado en cadera">Drapeado cadera</option>
+        <option value="con pedrería discreta en hombros">Pedrería hombros</option>
+        <option value="con tirantes de pedrería fina">Tirantes pedrería</option>
+        <option value="con efecto brillante suave tipo seda">Seda brillante</option>
+        <option value="de tejido terciopelo lujoso">Terciopelo lujoso</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL LENCERÍA -->
+<div class="outfit-panel" id="cat-lenceria">
+  <div data-u-style="u012">
+    <span data-u-style="u013">✦ Nivel editorial adulto no explícito — estética moda, arte y retrato profesional</span>
+  </div>
+  <div class="g2">
+    <div class="box">
+      <label>Lencería editorial</label>
+      <select id="outfit-lenceria">
+        <optgroup label="── Bodysuits ──">
+          <option selected>bodysuit de encaje elegante</option>
+          <option>bodysuit de satén con escote en V</option>
+          <option>bodysuit floral de encaje semitransparente</option>
+          <option>bodysuit de terciopelo ajustado</option>
+          <option>bodysuit minimalista de seda color nude</option>
+          <option>bodysuit de rejilla fina con detalles de lazos</option>
+        </optgroup>
+        <optgroup label="── Corsets / bustiers ──">
+          <option>corset de satén con ballenas visibles</option>
+          <option>bustier de encaje con detalles dorados</option>
+          <option>corset de terciopelo tipo victoriano moderno</option>
+          <option>bustier de satén con escote sweetheart</option>
+          <option>corset estructurado con falda midi encima</option>
+          <option>bustier floral de encaje con hombros descubiertos</option>
+        </optgroup>
+        <optgroup label="── Conjuntos ──">
+          <option>conjunto de sujetador de encaje con braguita a juego</option>
+          <option>conjunto de lencería de satén champagne</option>
+          <option>conjunto babydoll de encaje con bata semitransparente</option>
+          <option>bralette de encaje con pantalón de pijama satinado</option>
+          <option>combinación de seda al sesgo tipo años 40</option>
+          <option>camisón tipo slip dress de satén</option>
+        </optgroup>
+        <optgroup label="── Sueltas ──">
+          <option>sujetador estructurado de encaje con pantalón elegante encima</option>
+          <option>bralette minimalista con falda de satén midi</option>
+          <option>top lencero de satén como prenda exterior</option>
+        </optgroup>
+        <optgroup label="── Corsetería avanzada ──">
+          <option>corset de cuero suave tipo fetish editorial elegante</option>
+          <option>corsé de encaje rígido con cierre trasero de cordones</option>
+          <option>bustier transparente de tul con bordado floral</option>
+          <option>body abierto de encaje con tirantes cruzados en espalda</option>
+          <option>liguero con medias thigh-high a juego de encaje negro</option>
+          <option>liguero de satén champagne con medias ultra finas nude</option>
+          <option>conjunto de liguero floral con sujetador y braguita a juego</option>
+        </optgroup>
+        <optgroup label="── Loungewear lencero ──">
+          <option>conjunto de teddy de encaje largo hasta muslo</option>
+          <option>babydoll asimétrico de encaje con tanga discreto</option>
+          <option>camisón largo de seda con abertura lateral profunda</option>
+          <option>conjunto de culottes satinado tipo años 40 con brasier</option>
+          <option>body de terciopelo suave con cuello cisne</option>
+          <option>bralette de encaje con pantalones culotte amplios</option>
+        </optgroup>
+        <option>Custom</option>
+      </select>
+      <input id="customOutfit-lenceria" placeholder="Custom lencería"/>
+    </div>
+    <div class="box">
+      <label>Capa exterior (opcional)</label>
+      <select id="lenceriaLayer">
+        <option value="">Sin capa</option>
+        <option value="con bata de seda transparente encima">Bata seda transparente</option>
+        <option value="con bata de tul suave encima">Bata de tul</option>
+        <option value="con kimono semitransparente encima">Kimono semitransparente</option>
+        <option value="con blazer negro abierto encima">Blazer negro abierto</option>
+        <option value="con cardigan suave abierto encima">Cardigan abierto</option>
+        <option value="con capa de tul largo encima">Capa de tul largo</option>
+        <option value="con pantalón palazzo encima">Pantalón palazzo</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DISFRAZ -->
+<div class="outfit-panel" id="cat-disfraz">
+  <div class="g2">
+    <div class="box">
+      <label>Disfraces elegantes · rol editorial</label>
+      <select id="outfit-disfraz">
+        <optgroup label="── Profesionales ──">
+          <option selected>uniforme de enfermera clásico ajustado estilo vintage</option>
+          <option>uniforme de doctora con bata ajustada y estetoscopio</option>
+          <option>uniforme de secretaria clásica con blusa y falda lápiz</option>
+          <option>uniforme de profesora elegante con gafas y traje sastre</option>
+          <option>uniforme de azafata vintage con falda y pañuelo</option>
+          <option>uniforme de recepcionista de hotel de lujo</option>
+          <option>uniforme de bibliotecaria clásica con falda midi</option>
+          <option>traje de abogada de poder con blazer y falda ajustada</option>
+          <option>uniforme de policía femenina estilizado editorial</option>
+        </optgroup>
+        <optgroup label="── Rol elegante ──">
+          <option>estilismo pin-up editorial elegante estilo años 50</option>
+          <option>disfraz de dama victoriana con corsé y falda larga</option>
+          <option>disfraz noir años 40 con vestido negro y sombrero</option>
+          <option>disfraz de emperatriz romana con toga drapeada</option>
+          <option>disfraz de hada madrina con vestido vaporoso</option>
+          <option>disfraz de bruja elegante con vestido de encaje</option>
+          <option>disfraz de diablesa elegante con vestido ajustado</option>
+          <option>disfraz de vampiresa aristocrática con vestido largo</option>
+          <option>estilismo de gato negro editorial con accesorios elegantes</option>
+          <option>disfraz de sirena con vestido escamas</option>
+        </optgroup>
+        <optgroup label="── Fantasía ──">
+          <option>disfraz de ángel con vestido vaporoso y alas</option>
+          <option>disfraz de geisha moderna con kimono ajustado</option>
+          <option>disfraz de reina medieval con vestido y corona</option>
+          <option>disfraz de espía elegante con traje ajustado</option>
+        </optgroup>
+        <option>Custom</option>
+      </select>
+      <input id="customOutfit-disfraz" placeholder="Custom disfraz"/>
+    </div>
+    <div class="box">
+      <label>Ajuste editorial</label>
+      <select id="disfrazFit">
+        <option value="estilo editorial elegante">Editorial elegante</option>
+        <option value="entallado editorial con estética de moda" selected>Editorial marcado</option>
+        <option value="con abertura o detalle provocador pero no explícito">Con detalle provocador</option>
+      </select>
+      <label data-u-style="u014">Prop de rol</label>
+      <select id="disfrazProp">
+        <option value="">Sin prop</option>
+        <option value="con estetoscopio">Estetoscopio</option>
+        <option value="con gafas de biblioteca">Gafas biblioteca</option>
+        <option value="con maletín elegante">Maletín</option>
+        <option value="con fusta o bastón">Fusta / bastón</option>
+        <option value="con libro abierto en mano">Libro en mano</option>
+        <option value="con pluma y bloc de notas">Pluma y bloc</option>
+        <option value="con sombrero de rol">Sombrero de rol</option>
+        <option value="con antifaz elegante">Antifaz</option>
+        <option value="con varita o cetro">Varita / cetro</option>
+        <option value="con látigo o fusta elegante">Fusta elegante</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL BAÑO -->
+<div class="outfit-panel" id="cat-banyo">
+  <div class="g2">
+    <div class="box">
+      <label>Trajes de baño · playa · piscina</label>
+      <select id="outfit-banyo">
+        <optgroup label="── Bañadores ──">
+          <option selected>bañador entero de corte alto elegante</option>
+          <option>bañador entero con escote en V profundo</option>
+          <option>bañador entero con drapeado en cadera</option>
+          <option>bañador entero de rayas clásico estilo retro</option>
+          <option>bañador entero de corte minimalista</option>
+          <option>bañador entero con detalle cut-out lateral discreto</option>
+          <option>bañador entero con abertura en espalda</option>
+          <option>bañador entero floral de corte alto</option>
+          <option>bañador entero tipo bustier con escote cuadrado</option>
+        </optgroup>
+        <optgroup label="── Bikinis ──">
+          <option>bikini clásico de triangulo con lazo</option>
+          <option>bikini de top bandeau y braguita alta</option>
+          <option>bikini retro de top halter y braguita alta tipo pin-up</option>
+          <option>bikini de top deportivo y braguita alta</option>
+          <option>bikini estampado con braguita alta corte brasileño</option>
+          <option>bikini metálico tipo editorial</option>
+          <option>bikini de top tipo sujetador con aro y braguita lateral</option>
+        </optgroup>
+        <optgroup label="── Con cubreplaya ──">
+          <option>bañador con pareo de seda atado a la cadera</option>
+          <option>bañador con cubreplaya de gasa larga semitransparente</option>
+          <option>bikini con kimono de playa bordado</option>
+          <option>bañador con falda de playa envolvente de lino</option>
+          <option>bañador con chaqueta de playa de ganchillo</option>
+        </optgroup>
+        <option>Custom</option>
+      </select>
+      <input id="customOutfit-banyo" placeholder="Custom traje de baño"/>
+    </div>
+    <div class="box">
+      <label>Escena de agua</label>
+      <select id="banyoScene">
+        <option value="">Usar escena principal</option>
+        <option value="piscina privada con hamaca y luz de tarde">Piscina privada tarde</option>
+        <option value="piscina de hotel de lujo con vistas al mar">Piscina hotel lujo</option>
+        <option value="playa tranquila de arena fina fuera de temporada">Playa tranquila</option>
+        <option value="playa mediterránea con luz cálida de atardecer">Playa mediterránea</option>
+        <option value="orilla del mar con luz dorada al atardecer">Orilla atardecer</option>
+        <option value="terraza con piscina infinita y vistas al mar">Piscina infinita</option>
+        <option value="spa privado con piscina interior de mármol">Spa interior mármol</option>
+      </select>
+      <label data-u-style="u014">Accesorio de playa</label>
+      <select id="banyoAcc">
+        <option value="">Sin accesorio</option>
+        <option value="con sombrero de paja elegante">Sombrero de paja</option>
+        <option value="con gafas de sol de diseño">Gafas de sol</option>
+        <option value="con pamela blanca">Pamela blanca</option>
+        <option value="sosteniendo una bebida tropical">Bebida tropical</option>
+        <option value="con toalla de playa de lujo">Toalla de lujo</option>
+        <option value="con bolsa de rafia elegante">Bolsa de rafia</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DEPORTE -->
+<div class="outfit-panel" id="cat-deporte">
+  <div class="g2">
+    <div class="box">
+      <label>Ropa deportiva premium</label>
+      <select id="outfit-deporte">
+        <optgroup label="── Sets ──">
+          <option selected>conjunto de leggings y top ajustado premium</option>
+          <option>conjunto de yoga de tejido técnico suave</option>
+          <option>conjunto deportivo ajustado tipo pilates</option>
+          <option>conjunto deportivo pastel premium</option>
+          <option>conjunto deportivo de lujo con chaqueta a juego</option>
+          <option>conjunto de running con mallas y top de tirantes</option>
+        </optgroup>
+        <optgroup label="── Separates ──">
+          <option>leggings de talle alto con top deportivo</option>
+          <option>mallas de ciclismo con camiseta técnica</option>
+          <option>pantalón palazzo técnico con top de yoga</option>
+          <option>shorts de talle alto con sujetador deportivo</option>
+          <option>leggings de tejido translúcido con top largo de lycra</option>
+        </optgroup>
+        <optgroup label="── Casual activo ──">
+          <option>sudadera oversized con leggings ajustados</option>
+          <option>conjunto de tenis con falda y top polo</option>
+          <option>conjunto de golf con pantalón chino y polo</option>
+          <option>bañador de competición deportiva elegante</option>
+        </optgroup>
+        <option>Custom</option>
+      </select>
+      <input id="customOutfit-deporte" placeholder="Custom deportivo"/>
+    </div>
+    <div class="box">
+      <label>Escena deportiva</label>
+      <select id="deporteScene">
+        <option value="">Usar escena principal</option>
+        <option value="gimnasio privado de lujo con espejos">Gimnasio privado</option>
+        <option value="sala de yoga con luz natural y suelo de madera">Sala yoga</option>
+        <option value="terraza exterior para ejercicio con vistas">Terraza exterior</option>
+        <option value="parque arbolado con luz filtrada">Parque arbolado</option>
+        <option value="pista de tenis elegante">Pista tenis</option>
+        <option value="estudio de pilates con reformer">Estudio pilates</option>
+        <option value="exterior en escaleras de ciudad con luz natural">Escaleras urbanas</option>
+      </select>
+      <label data-u-style="u014">Accesorio deportivo</label>
+      <select id="deporteAcc">
+        <option value="">Sin accesorio</option>
+        <option value="con botella de agua elegante">Botella agua</option>
+        <option value="con esterilla enrollada bajo el brazo">Esterilla yoga</option>
+        <option value="con auriculares inalámbricos">Auriculares</option>
+        <option value="con toalla deportiva al cuello">Toalla deportiva</option>
+        <option value="con raqueta de tenis">Raqueta tenis</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ⑥  CALZADO + JOYERÍA -->
+<div class="sec"><span class="sec-n">06</span>Calzado · Joyería · Complementos</div>
+<div class="g3">
+  <div class="box">
+    <label>Calzado</label>
+    <select id="shoes">
+      <optgroup label="── Casa ──">
+        <option selected>zapatillas de casa cerradas por delante y abiertas por detrás</option>
+        <option>zapatillas tipo hotel minimalistas</option>
+        <option>mules de satén con tacón bajo tipo boudoir</option>
+        <option>pantuflas de pelo suave y elegante</option>
+      </optgroup>
+      <optgroup label="── Planos ──">
+        <option>bailarinas discretas en nude o negro</option>
+        <option>mocasines elegantes de cuero pulido</option>
+        <option>slippers tipo loafer de cuero</option>
+        <option>oxford planos de punta fina</option>
+        <option>zapatos planos elegantes de cuero suave</option>
+      </optgroup>
+      <optgroup label="── Tacón ──">
+        <option>tacón bajo cómodo y elegante</option>
+        <option>kitten heel elegante 3–4cm</option>
+        <option>pump de tacón cuadrado bajo</option>
+        <option>tacones clásicos cerrados</option>
+        <option>zapatos nude cerrados elegantes</option>
+        <option>zapatos negros cerrados elegantes</option>
+        <option>stiletto de tacón fino elegante</option>
+      </optgroup>
+      <optgroup label="── Sandalias ──">
+        <option>sandalias elegantes de tiras finas</option>
+        <option>sandalias planas de cuero trenzado</option>
+        <option>mules de tira fina con tacón bajo</option>
+        <option>sandalias de plataforma discreta</option>
+        <option>sandalias tipo Roma con correa al tobillo</option>
+        <option>sandalias de gladiadora elegante</option>
+      </optgroup>
+      <optgroup label="── Botas ──">
+        <option>botas altas de caña ancha de cuero</option>
+        <option>botines de cuero con tacón bajo</option>
+        <option>botas de media caña elegantes</option>
+        <option>botas mosqueteras de cuero largo</option>
+      </optgroup>
+      <optgroup label="── Sport / playa ──">
+        <option>zapatillas deportivas premium blancas</option>
+        <option>sandalias de playa minimalistas</option>
+        <option>descalza de forma natural</option>
+      </optgroup>
+      <option>sin calzado visible</option>
+      <option>Custom</option>
+    </select>
+    <input id="customShoes" placeholder="Custom calzado"/>
+  </div>
+  <div class="box">
+    <label>Joyería</label>
+    <select id="jewelry">
+      <option value="">Sin joyería</option>
+      <option value="collar de perlas clásico">Collar perlas</option>
+      <option value="gargantilla fina de oro">Gargantilla oro</option>
+      <option value="pendientes de aro dorado fino">Pendientes aro dorado</option>
+      <option value="pendientes de gota con piedra">Pendientes gota</option>
+      <option value="pendientes de perla clásicos">Pendientes perla</option>
+      <option value="pendientes largos de cadena">Pendientes cadena larga</option>
+      <option value="pulsera de oro discreta">Pulsera oro</option>
+      <option value="pulsera de eslabones gruesos">Pulsera eslabones</option>
+      <option value="anillo de piedra grande tipo cóctel">Anillo cóctel</option>
+      <option value="reloj clásico dorado en muñeca">Reloj dorado</option>
+      <option value="joyería minimalista plateada">Joyería plateada</option>
+      <option value="conjunto completo de joyería dorada">Conjunto dorado</option>
+      <option value="collar de diamantes tipo rivière">Collar diamantes rivière</option>
+      <option value="gargantilla de terciopelo negro con camafeo">Gargantilla camafeo vintage</option>
+      <option value="pendientes chandelier largos con piedras">Pendientes chandelier</option>
+      <option value="pulsera de eslabones anchos tipo brazalete">Brazalete eslabones</option>
+      <option value="collar de cadena gruesa tipo bold statement">Collar bold statement</option>
+      <option value="tiara discreta de cristales para gala">Tiara cristales gala</option>
+      <option value="anillo de serpiente dorada tipo art déco">Anillo serpiente art déco</option>
+      <option value="Custom">Custom</option>
+    </select>
+    <input id="customJewelry" placeholder="Custom joyería"/>
+  </div>
+  <div class="box">
+    <label>Complementos</label>
+    <select id="accessories">
+      <option value="">Sin complemento</option>
+      <option value="bolso de mano de cuero elegante">Bolso cuero</option>
+      <option value="clutch satinado discreto">Clutch satinado</option>
+      <option value="pañuelo de seda al cuello">Pañuelo cuello</option>
+      <option value="gafas de sol de diseño clásico">Gafas sol</option>
+      <option value="gafas discretas graduadas">Gafas graduadas</option>
+      <option value="cinturón fino de cuero en talle">Cinturón fino</option>
+      <option value="sombrero de ala ancha elegante">Sombrero</option>
+      <option value="pamela de paja fina">Pamela paja</option>
+      <option value="guantes de cuero cortos elegantes">Guantes cuero</option>
+      <option value="abanico elegante en mano">Abanico</option>
+      <option value="taza de café en mano">Taza café</option>
+      <option value="copa de champán en mano">Copa champán</option>
+      <option value="libro abierto en regazo">Libro</option>
+      <option value="cigarrillo vintage elegante entre dedos">Cigarrillo vintage</option>
+      <option value="teléfono retro en mano, gesto elegante">Teléfono retro</option>
+      <option value="collar de flores naturales tipo guirnalda">Guirnalda flores</option>
+      <option value="mantilla española de encaje negro">Mantilla española</option>
+      <option value="chal de cachemira sobre hombros">Chal cachemira</option>
+      <option value="Custom">Custom</option>
+    </select>
+    <input id="customAccessories" placeholder="Custom complemento"/>
+  </div>
+</div>
+
+<!-- ⑦  MEDIAS -->
+<div class="sec"><span class="sec-n">07</span>Medias PRO</div>
+<div class="g4">
+  <div class="box">
+    <label>Modo</label>
+    <select id="legmode"><option value="on" selected>Con medias</option><option value="off">Sin medias</option></select>
+    <label data-u-style="u014">Tipo</label>
+    <select id="legtype">
+      <optgroup label="── Pantyhose ──">
+        <option>pantyhose completas</option>
+        <option>medias opacas 40D</option><option>medias opacas 80D</option>
+        <option>medias negras translúcidas efecto piel</option>
+        <option>medias nude ultra finas efecto invisible</option>
+      </optgroup>
+      <optgroup label="── Thigh-high ──">
+        <option selected>medias thigh-high</option>
+        <option>medias thigh-high con encaje elegante</option>
+        <option>medias thigh-high con costura trasera</option>
+        <option>medias altas con banda de silicona</option>
+        <option>medias con banda superior de encaje visible</option>
+      </optgroup>
+      <optgroup label="── Altura media ──">
+        <option>medias hasta la rodilla</option>
+        <option>medias de media pantorrilla</option>
+        <option>medias cortas de tobillo</option>
+      </optgroup>
+      <optgroup label="── Textura ──">
+        <option>medias de rejilla fina editorial</option>
+        <option>medias con encaje sutil</option>
+        <option>medias satinadas con brillo suave</option>
+        <option>medias con efecto velvet mate</option>
+        <option>medias con costura central vintage</option>
+      </optgroup>
+      <option>sin medias visibles</option>
+      <optgroup label="── Medias especiales ──">
+        <option value="medias thigh-high con patrón de diamantes">Thigh-high diamantes</option>
+        <option value="medias thigh-high con lazo en la banda superior">Thigh-high con lazo</option>
+        <option value="medias thigh-high de encaje floral completo">Thigh-high encaje floral</option>
+        <option value="medias thigh-high de rejilla hexagonal">Thigh-high rejilla hex</option>
+        <option value="medias thigh-high con abertura de costura doble vintage">Thigh-high costura doble</option>
+        <option value="medias de encaje negro completo hasta el muslo">Encaje negro hasta muslo</option>
+        <option value="medias transparentes con puntitos de terciopelo">Puntos terciopelo</option>
+        <option value="medias de seda natural con costuras traseras finas">Seda natural con costura</option>
+        <option value="pantyhose con diseño de encaje en pantorrillas">Pantyhose encaje pantorrilla</option>
+        <option value="pantyhose con degradado de oscuro en pies a transparente">Pantyhose degradado</option>
+        <option value="medias de red gruesa tipo cabaret editorial">Red gruesa cabaret</option>
+        <option value="medias de red fina elegante semitransparente">Red fina elegante</option>
+        <option value="medias con bordado floral lateral en pantorrilla">Bordado floral lateral</option>
+        <option value="calcetines largos overknee tipo colegiala elegante">Overknee tipo colegiala</option>
+      </optgroup>
+      <option>Custom</option>
+    </select>
+    <input id="customLegwear" placeholder="Custom medias"/>
+  </div>
+  <div class="box">
+    <label>Color medias</label>
+    <select id="legcolor" data-onchange="updateLegSwatch()">
+      <option data-hex="#111">negras</option>
+      <option selected data-hex="#6b3e20">marrones</option>
+      <option data-hex="#d4b896">nude efecto natural</option>
+      <option data-hex="#d4c0a0">beige</option>
+      <option data-hex="#f0f0f0">blancas</option>
+      <option data-hex="#606070">gris humo</option>
+      <option data-hex="#c0c0d0">gris perla</option>
+      <option data-hex="#e8d898">champagne</option>
+      <option data-hex="#e8a0b8">rosa suave</option>
+      <option data-hex="#c0a0d8">lila suave</option>
+      <option data-hex="#101838">azul noche</option>
+      <option data-hex="#cc2020">rojo editorial</option>
+      <option data-hex="#6a1020">burdeos</option>
+      <option data-hex="#a07040">bronce suave</option>
+      <option data-hex="">sin color específico</option>
+    </select>
+    <div class="color-row"><div class="swatch" id="legSwatch" data-u-style="u015"></div><span id="legSwatchLabel" data-u-style="u008">marrones</span></div>
+  </div>
+  <div class="box">
+    <label>Transparencia</label>
+    <select id="transparency">
+      <option>opacas 80D</option><option>opacas 40D</option>
+      <option selected>semitransparentes</option><option>translúcidas suaves</option>
+      <option>ultra finas</option><option>mate natural</option><option>satinadas suaves</option>
+    </select>
+    <label data-u-style="u014">Textura / detalle</label>
+    <select id="texture">
+      <option>sin detalle extra</option><option>acabado mate natural</option>
+      <option>brillo suave controlado</option><option>encaje sutil</option>
+      <option>encaje floral fino</option>
+      <option selected>banda superior ligeramente más oscura</option>
+      <option>rejilla fina editorial</option><option>costura trasera discreta</option>
+      <option>costura trasera gruesa vintage</option><option>efecto velvet suave</option>
+    </select>
+    <label data-u-style="u014">Altura</label>
+    <select id="height">
+      <option>altura completa</option><option selected>altura muslo</option>
+      <option>altura rodilla</option><option>altura media pantorrilla</option>
+      <option>altura tobillo</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Intensidad editorial <span id="sbadge" class="sbadge sb1">Elegante</span></label>
+    <select id="sensual" data-onchange="updateSensualUI();checkFilterRisk()">
+      <option value="off">Neutro</option>
+      <option value="soft" selected>Elegante atractivo</option>
+      <option value="medium">Editorial adulto no explícito</option>
+      <option value="high">Editorial intenso</option>
+    </select>
+    <div class="intensity-bar" id="intensityBar">
+      <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ⑧  ESCENA + ACCIÓN -->
+<div class="sec"><span class="sec-n">08</span>Escena · Acción · Luz</div>
+<div class="g3">
+  <div class="box">
+    <label>Escenario</label>
+    <select id="scene">
+      <optgroup label="── Interior ──">
+        <option selected>comedor moderno y luminoso</option>
+        <option>salón acogedor con sofá</option>
+        <option>dormitorio elegante y ordenado</option>
+        <option>vestidor moderno con espejo grande</option>
+        <option>cocina elegante con luz natural</option>
+        <option>baño elegante de mármol blanco</option>
+        <option>biblioteca privada cálida</option>
+        <option>sala de lectura con sillón</option>
+        <option>recibidor amplio con espejo</option>
+      </optgroup>
+      <optgroup label="── Exterior ──">
+        <option>balcón con vistas al mar o ciudad</option>
+        <option>terraza mediterránea</option>
+        <option>jardín privado con luz de tarde</option>
+        <option>patio exterior con plantas y luz difusa</option>
+        <option>azotea urbana con vistas</option>
+        <option>balcón parisino con railing negro</option>
+        <option>campo de lavanda al atardecer</option>
+        <option>bosque de pinos con luz filtrada</option>
+        <option>playa tranquila fuera de temporada</option>
+      </optgroup>
+      <optgroup label="── Hotel ──">
+        <option>habitación de hotel boutique</option>
+        <option>suite de hotel con luz cálida</option>
+        <option>terraza de hotel con vistas al mar</option>
+        <option>lobby de hotel contemporáneo</option>
+        <option>spa de hotel con ambiente sereno</option>
+      </optgroup>
+      <optgroup label="── Estudio / urbano ──">
+        <option>estudio fotográfico con fondo neutro</option>
+        <option>estudio con luz lateral tipo Rembrandt</option>
+        <option>loft urbano con grandes ventanales</option>
+        <option>galería de arte contemporáneo</option>
+      </optgroup>
+      <optgroup label="── Agua ──">
+        <option>piscina privada con hamaca y luz de tarde</option>
+        <option>piscina de hotel de lujo con vistas</option>
+        <option>piscina infinita con vistas al mar</option>
+        <option>spa privado con piscina interior</option>
+      </optgroup>
+      <option>Custom</option>
+    
+      <optgroup label="── Ambientes especiales ──">
+        <option value="ático de lujo con vistas nocturnas a la ciudad">Ático lujo nocturno</option>
+        <option value="finca rural andaluza con luz de tarde cálida">Finca rural andaluza</option>
+        <option value="castillo europeo con salón de estilo vintage">Castillo salón vintage</option>
+        <option value="bodega vinícola con barriles y luz dorada cálida">Bodega vinícola</option>
+        <option value="café parisino con luz dorada de atardecer">Café parisino atardecer</option>
+        <option value="yate de lujo en alta mar con luz mediterránea">Yate lujo mediterráneo</option>
+        <option value="invernadero tropical con plantas exuberantes y luz cenital">Invernadero tropical</option>
+        <option value="rooftop neoyorquino con skyline nocturno">Rooftop Nueva York</option>
+        <option value="casa de campo inglesa con chimenea encendida">Casa campo chimenea</option>
+        <option value="capilla con luz de vitrales de colores">Capilla luz vitrales</option>
+      </optgroup>
+      <option>Custom</option>
+</select>
+    <input id="customScene" placeholder="Custom escena"/>
+  </div>
+  <div class="box">
+    <label>Acción / postura</label>
+    <select id="action">
+      <option selected>de pie de frente, cuerpo entero</option>
+      <option>de pie con postura natural y relajada</option>
+      <option>de pie mirando a cámara con sonrisa</option>
+      <option>de pie de espaldas con mirada sobre el hombro</option>
+      <option>sentada en sofá con postura natural</option>
+      <option>sentada en la cama de forma relajada</option>
+      <option>sentada en diván con piernas cruzadas</option>
+      <option>sentada en silla con postura elegante</option>
+      <option>recostada con actitud relajada</option>
+      <option>apoyada en pared o columna con soltura</option>
+      <option>caminando suavemente hacia cámara</option>
+      <option>apoyada junto a una ventana</option>
+      <option>sosteniendo un accesorio o prop</option>
+      <option>mirándose en un espejo de cuerpo entero</option>
+      <option>posando de forma limpia estilo catálogo</option>
+      <option>mirando a cámara con ligera sonrisa editorial</option>
+      <option>postura relajada con inclinación de cadera</option>
+      <option>ajustando suavemente una prenda</option>
+      <option>leyendo junto a una ventana</option>
+      <option>tumbada en cama o diván con actitud relajada</option>
+      <option>postura de yoga o estiramiento natural</option>
+      <option>saliendo del agua con naturalidad</option>
+      <optgroup label="── Poses editoriales ──">
+        <option value="de pie con una mano en cadera y mirada directa a cámara">Mano en cadera</option>
+        <option value="sentada con piernas cruzadas a la altura de muslo, pose segura y elegante">Piernas cruzadas muslo</option>
+        <option value="sentada en el borde de la cama con espalda recta y mirada a cámara">Borde cama · espalda recta</option>
+        <option value="recostada de lado con curva natural de cadera marcada">Recostada de lado · cadera</option>
+        <option value="de espaldas levemente inclinada, mirada sobre el hombro con sonrisa suave">Espalda + mirada hombro</option>
+        <option value="sentada en suelo con piernas extendidas hacia cámara, postura elegante">Piernas extendidas cámara</option>
+        <option value="de pie con manos en la nuca, codos abiertos, postura segura y libre">Manos en nuca · abierta</option>
+        <option value="apoyada en marco de puerta con postura cómoda natural">Apoyada en marco puerta</option>
+        <option value="tumbada boca arriba con piernas ligeramente elevadas, actitud relajada">Tumbada · piernas elevadas</option>
+        <option value="arrodillada con postura elegante y espalda recta, actitud serena">Arrodillada elegante</option>
+        <option value="sentada en silla con una pierna sobre el reposabrazos, actitud libre">Pierna sobre reposabrazos</option>
+        <option value="de pie de lado mostrando perfil completo, mirada al frente">Perfil lateral completo</option>
+        <option value="de pie con la espalda contra la pared, una rodilla ligeramente doblada">Espalda en pared · rodilla</option>
+        <option value="inclinada hacia cámara, escote hacia adelante, mirada directa intensa">Inclinada hacia cámara</option>
+      </optgroup>
+      <optgroup label="── Con props ──">
+        <option value="recostada leyendo un libro con naturalidad y relajación">Leyendo recostada</option>
+        <option value="sosteniendo una copa con elegancia y mirada directa a cámara">Copa en mano</option>
+        <option value="frente al espejo ajustando la ropa con naturalidad, doble plano">Frente al espejo</option>
+        <option value="sentada aplicándose perfume con elegancia editorial suave">Aplicando perfume</option>
+      </optgroup>
+      <option>Custom</option>
+    
+      <optgroup label="── Poses de suelo ──">
+        <option value="sentada en el suelo con rodillas recogidas y actitud íntima">Rodillas recogidas suelo</option>
+        <option value="tumbada de lado en el suelo sobre alfombra, pose editorial larga">Tumbada de lado suelo</option>
+        <option value="sentada en suelo con piernas estiradas a los lados en V, postura abierta">Piernas en V abiertas</option>
+        <option value="pose felina en cuatro puntos apoyada en suelo, elegante">Pose felina en cuatro puntos</option>
+      </optgroup>
+      <optgroup label="── En escaleras ──">
+        <option value="sentada en escaleras con una rodilla elevada, postura natural urbana">Sentada en escaleras</option>
+        <option value="bajando escaleras con confianza, mirada directa al frente">Bajando escaleras</option>
+        <option value="de pie en escalón superior con actitud dominante y segura">De pie en escalón superior</option>
+      </optgroup>
+      <optgroup label="── Íntimas boudoir ──">
+        <option value="tumbada boca abajo con pies elevados, actitud despreocupada y natural">Tumbada boca abajo pies arriba</option>
+        <option value="semitumbada con un brazo sobre la almohada, mirada directa muy íntima">Semitumbada almohada</option>
+        <option value="de pie de espaldas completo sin girar, figura entera vista posterior">De espaldas completo</option>
+        <option value="postura de abandono recostada con brazos abiertos, actitud libre">Abandono relajada abierta</option>
+        <option value="sentada con una pierna colgando del borde de la cama o mueble">Pierna colgando borde</option>
+      </optgroup>
+      <option>Custom</option>
+</select>
+    <input id="customAction" placeholder="Custom acción/pose"/>
+  </div>
+  <div class="box">
+    <label>Luz</label>
+    <select id="lighting">
+      <option selected>luz natural lateral suave</option>
+      <option>luz de ventana difusa</option>
+      <option>luz cálida de tarde</option>
+      <option>hora dorada suave exterior</option>
+      <option>contraluz suave difuminado</option>
+      <option>luz de hotel cálida y elegante</option>
+      <option>luz de estudio suave y limpia</option>
+      <option>luz mediterránea natural</option>
+      <option>luz de vela o ambiental cálida</option>
+      <option>luz dramática lateral tipo Rembrandt</option>
+      <option>luz natural difusa de mañana</option>
+      <option>luz de piscina reflejada en agua</option>
+      <optgroup label="── Cinematográfica ──">
+        <option value="luz Rembrandt con triángulo de sombra en mejilla">Rembrandt · triángulo</option>
+        <option value="beauty light mariposa suave, frontal bajo nariz difusa">Butterfly · beauty light</option>
+        <option value="luz dividida 50/50 lateral muy dramática">Split light · dramática</option>
+        <option value="luz de neón de color ambiental nocturno urbano, rosa o azul">Neón color nocturno</option>
+        <option value="luz de chimenea, tonos naranjas cálidos titilantes en piel">Chimenea · naranja cálido</option>
+        <option value="contraluz total, silueta definida con halo de luz blanca">Silueta con halo</option>
+        <option value="rayos de sol volumétricos a través de persianas o ventanas">Rayos sol entre persianas</option>
+      </optgroup>
+      <optgroup label="── Ambiente ──">
+        <option value="luz de luna suave, ambiente plateado nocturno sereno">Luz de luna</option>
+        <option value="amanecer rosado, hora azul, luz fría y cálida simultánea">Amanecer rosado</option>
+        <option value="luz artificial de galería de arte, focos puntuales en figura">Galería de arte · focos</option>
+        <option value="luz de lluvia reflejada, ambiente nublado difuso y melancólico">Lluvia · difuso melancólico</option>
+      </optgroup>
+      <optgroup label="── Especiales ──">
+        <option value="luz de vela o candelabro, múltiples puntos cálidos tenues">Velas / candelabro</option>
+        <option value="luz de acuario azul verdosa reflejada en piel">Acuario azul verdoso</option>
+        <option value="luz de proyector cinematográfico lateral con partículas de polvo">Proyector cine polvo</option>
+        <option value="luz de farol de gas exterior nocturno, tono ámbar vintage">Farol gas ámbar noche</option>
+        <option value="luz reflejada en agua, destellos móviles en la piel">Reflejos de agua</option>
+        <option value="luz de estudio beauty con reflector plateado circular">Beauty dish plateado</option>
+        <option value="claroscuro extremo tipo Caravaggio, 90% oscuridad">Caravaggio extremo</option>
+      </optgroup>
+    </select>
+    <label data-u-style="u014">Expresión / mirada</label>
+    <select id="expression">
+      <option>mirada tranquila y segura</option>
+      <option selected>mirada directa con confianza</option>
+      <option>ligera sonrisa cálida</option>
+      <option>mirada serena con presencia</option>
+      <option>sonrisa suave y elegante</option>
+      <option>mirada atractiva sin exageración</option>
+      <option>mirada editorial bajo cejas</option>
+      <option>labios entreabiertos, mirada intensa</option>
+      <option>expresión editorial contenida</option>
+    </select>
+  </div>
+</div>
+
+<!-- ⑨  CÁMARA -->
+<div class="sec"><span class="sec-n">09</span>Cámara · Encuadre · Lente</div>
+<div class="g3">
+  <div class="box">
+    <label>Plano / encuadre</label>
+    <div class="cam-pills" id="planoPills">
+      <button class="cam-pill active" data-onclick="setPill('plano','cuerpo entero, de pies a cabeza',this)">Cuerpo entero</button>
+      <button class="cam-pill" data-onclick="setPill('plano','plano medio, de cintura para arriba',this)">Plano medio</button>
+      <button class="cam-pill" data-onclick="setPill('plano','plano americano, de rodillas para arriba',this)">Americano</button>
+      <button class="cam-pill" data-onclick="setPill('plano','primer plano, retrato',this)">Primer plano</button>
+      <button class="cam-pill" data-onclick="setPill('plano','plano detalle de piernas y calzado',this)">Detalle piernas</button>
+      <button class="cam-pill" data-onclick="setPill('plano','plano detalle de ropa y textura',this)">Detalle ropa</button>
+    </div>
+    <select id="plano" data-u-style="u016"><option>cuerpo entero, de pies a cabeza</option></select>
+  </div>
+  <div class="box">
+    <label>Ángulo</label>
+    <div class="cam-pills" id="anguloPills">
+      <button class="cam-pill active" data-onclick="setPill('angulo','ángulo frontal directo',this)">Frontal</button>
+      <button class="cam-pill" data-onclick="setPill('angulo','ángulo 3/4 ligeramente lateral',this)">3/4 lateral</button>
+      <button class="cam-pill" data-onclick="setPill('angulo','ángulo lateral de perfil',this)">Perfil</button>
+      <button class="cam-pill" data-onclick="setPill('angulo','ángulo desde atrás con giro de cabeza',this)">Espalda / giro</button>
+      <button class="cam-pill" data-onclick="setPill('angulo','ángulo ligeramente elevado desde arriba',this)">Picado suave</button>
+      <button class="cam-pill" data-onclick="setPill('angulo','ángulo ligeramente bajo, desde abajo',this)">Contrapicado</button>
+    </div>
+    <select id="angulo" data-u-style="u016"><option>ángulo frontal directo</option></select>
+  </div>
+  <div class="box">
+    <label>Lente / bokeh</label>
+    <div class="cam-pills" id="lentePills">
+      <button class="cam-pill active" data-onclick="setPill('lente','lente 35mm estilo reportaje natural',this)">35mm</button>
+      <button class="cam-pill" data-onclick="setPill('lente','lente 50mm natural equilibrado',this)">50mm</button>
+      <button class="cam-pill" data-onclick="setPill('lente','lente 85mm portrait con bokeh suave',this)">85mm portrait</button>
+      <button class="cam-pill" data-onclick="setPill('lente','lente 70–200mm con fondo comprimido',this)">70–200mm</button>
+      <button class="cam-pill" data-onclick="setPill('lente','sin bokeh, fondo nítido',this)">Sin bokeh</button>
+      <button class="cam-pill" data-onclick="setPill('lente','bokeh fuerte y cremoso',this)">Bokeh fuerte</button>
+    </div>
+    <select id="lente" data-u-style="u016"><option>lente 35mm estilo reportaje natural</option></select>
+  </div>
+</div>
+
+<!-- ⑩  ESTILO VISUAL + SALIDA -->
+<div class="sec"><span class="sec-n">10</span>Estilo visual · Salida · Idioma</div>
+<div class="g4">
+  <div class="box">
+    <label>Estilo visual</label>
+    <select id="style">
+      <option selected>fotografía realista natural</option>
+      <option>editorial de moda elegante</option>
+      <option>ultra realista 4K</option>
+      <option>fotografía profesional de revista</option>
+      <option>natural sin retoque excesivo</option>
+      <option>lifestyle doméstico realista</option>
+      <option>catálogo limpio</option>
+      <option>cinematográfico suave</option>
+      <option>realismo premium con luz natural</option>
+      <option>fotografía vertical para redes</option>
+      <option>campaña de moda sobria</option>
+      <optgroup label="── Cinematográfico ──">
+        <option value="fotografía cinematográfica tipo película europea de los años 70">Cinematográfico años 70</option>
+        <option value="fotografía noir con luces y sombras dramáticas, blanco y negro contrastado">Noir · B&N dramático</option>
+        <option value="fotografía tipo Helmut Newton, blanco y negro contrastado muy definido">Helmut Newton B&N</option>
+        <option value="fotografía estilo Slim Aarons, lifestyle de lujo mediterráneo y color">Slim Aarons · lifestyle lujo</option>
+      </optgroup>
+      <optgroup label="── Técnica ──">
+        <option value="fotografía film grain analógico 35mm con grano natural visible">Film grain · analógico 35mm</option>
+        <option value="fotografía Polaroid vintage con bordes y tonos cálidos desaturados">Polaroid vintage</option>
+        <option value="fotografía con bokeh extremo, fondo completamente desenfocado cremoso">Bokeh extremo</option>
+        <option value="fotografía de alta clave, fondo blanco luminoso, altas luces controladas">High key · luminoso</option>
+        <option value="fotografía de baja clave, fondo oscuro, luces puntuales dramáticas">Low key · oscuro dramático</option>
+      </optgroup>
+      <optgroup label="── Estética ──">
+        <option value="fotografía estética italiana de los años 60, dolce vita mediterraneo">Dolce vita · italiana 60s</option>
+        <option value="fotografía estética francesa minimalista, Paris chic sin artificio">Paris chic · francesa</option>
+        <option value="fotografía fine art con luz escultórica y composición artística">Fine art · luz escultórica</option>
+        <option value="fotografía de moda japonesa, minimalismo extremo y textura de tela">Japonesa · minimalismo</option>
+        <option value="fotografía estética dark academia, tonos oscuros cálidos, biblioteca">Dark academia</option>
+      </optgroup>
+      <optgroup label="── Plataforma ──">
+        <option value="fotografía optimizada para Instagram vertical, composición centrada equilibrada">Instagram vertical</option>
+        <option value="fotografía banner horizontal para web, composición wide con espacio aire">Banner web horizontal</option>
+        <option value="fotografía para portada de libro, composición cuadrada elegante con margen">Portada libro</option>
+      </optgroup>
+      <optgroup label="── Nuevos estilos ──">
+        <option value="fotografía estética cottagecore, pastoral suave y natural">Cottagecore pastoral</option>
+        <option value="fotografía cyberpunk elegante con luces neón y sombras urbanas">Cyberpunk elegante</option>
+        <option value="fotografía estética Wes Anderson con simetría y paleta pastel">Wes Anderson simétrico</option>
+        <option value="fotografía tipo Old Hollywood glamour con luces suaves y encuadre clásico">Old Hollywood glamour</option>
+        <option value="fotografía fashion week backstage, reportaje íntimo entre bastidores">Fashion week backstage</option>
+        <option value="fotografía de revista Vogue España con composición audaz">Vogue España editorial</option>
+        <option value="fotografía tipo Annie Leibovitz, retrato íntimo con narrativa">Annie Leibovitz portrait</option>
+        <option value="fotografía monocromática elegante en tonos sepia cálidos">Monocromático sepia</option>
+        <option value="fotografía infrarroja falso color con piel luminosa y cielo oscuro">Infrarroja artística</option>
+        <option value="fotografía minimalista escandinava con fondos limpios y luz nórdica">Minimalismo escandinavo</option>
+      </optgroup>
+      <option>Custom</option>
+    </select>
+    <input id="customStyle" placeholder="Custom estilo visual"/>
+  </div>
+  <div class="box">
+    <label>Modo generación</label>
+    <select id="mode">
+      <option value="clean" selected>Limpio IA</option>
+      <option value="raw">RAW</option>
+      <option value="raw_advanced">RAW avanzado (2 prompts)</option>
+      <option value="raw_cinematic">RAW cinematic (3 prompts)</option>
+    </select>
+    <label data-u-style="u014">Nivel de detalle</label>
+    <select id="detail">
+      <option value="ultra">Ultra simple</option>
+      <option value="simple" selected>Simple</option>
+      <option value="mejorado">Mejorado</option>
+      <option value="pro">Pro completo</option>
+    </select>
+  </div>
+  <div class="box">
+    <label>Formato destino <span data-u-style="u017">(DALL·E → anti-filtro auto)</span></label>
+    <select id="format" data-onchange="checkFilterRisk()">
+      <option value="chatgpt" selected>ChatGPT Imagen</option>
+      <option value="gemini">Gemini</option>
+      <option value="midjourney">Midjourney</option>
+      <option value="flux">FLUX (stable diffusion)</option>
+      <option value="leonardo">Leonardo AI</option>
+      <option value="firefly">Adobe Firefly</option>
+      <option value="universal">Universal</option>
+    </select>
+    <label data-u-style="u014">Seguridad de salida</label>
+    <select id="safe" data-onchange="checkFilterRisk()">
+      <option value="off">Sin cláusula</option>
+      <option value="soft" selected>Suave</option>
+      <option value="strict">Estricto</option>
+    </select>
+  </div>
+  <div id="filterRiskBox" class="filter-risk"></div>
+  <div class="box">
+    <label>Idioma de salida</label>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="langES" data-onclick="setLang('es')">ES · Español</button>
+      <button class="lang-btn" id="langEN" data-onclick="setLang('en')">EN · English</button>
+    </div>
+    <label>Batch · cantidad</label>
+    <select id="amount"><option>5</option><option selected>10</option><option>20</option><option>50</option></select>
+    <label data-u-style="u018">Variación batch</label>
+    <select id="variation"><option value="none">Sin variación</option><option value="soft" selected>Suave</option><option value="high">Alta</option></select>
+  </div>
+</div>
+
+<!-- BOTONES -->
+<div class="row">
+  <button class="bp" data-onclick="generate()">▶ Generar prompt</button>
+  <button class="br" data-onclick="generateBatch()">📋 Batch</button>
+  <button class="bt" data-onclick="translateOutput()">🌐 Traducir al inglés</button>
+  <button class="bl" data-onclick="randomCoherent()">🎲 Random</button>
+  <button class="bg" data-onclick="autoPerfect()">✦ Auto perfecto</button>
+  <button class="bg" data-onclick="openAB()">⚖ A/B</button>
+  <button class="bg" data-onclick="openSeq()">⏩ Secuencia</button>
+  <button class="bg" data-onclick="copyOutput()">Copiar</button>
+  <button class="bg" data-onclick="downloadTxt()">💾 TXT</button>
+</div>
+
+</section>
+
+<!-- OUTPUT -->
+<section class="panel">
+  <div data-u-style="u019">
+    <div data-u-style="u020">Prompt generado</div>
+    <div data-u-style="u021">
+      <span id="liveBadge" class="live-badge" data-onclick="toggleLive()" data-u-style="u022" title="Click para activar/desactivar actualización en tiempo real"><span class="live-dot" id="liveDot"></span>LIVE</span>
+      <div class="token-bar" data-u-style="u023">
+        <span class="token-count" id="tokenCount">0</span><span data-u-style="u024">tokens</span>
+        <div class="token-fill"><div class="token-fill-inner" id="tokenFill" data-u-style="u025"></div></div>
+        <span id="tokenPct" data-u-style="u024">0%</span>
+      </div>
+    </div>
+  </div>
+  <div class="out-wrap">
+    <textarea id="output" class="output" readonly></textarea>
+    <div id="copyFlash" class="flash">Copiado ✓</div>
+  </div>
+  <!-- QUICK NOTES -->
+  <div data-u-style="u018">
+    <label data-u-style="u026">Nota rápida</label>
+    <input id="quickNote" placeholder="ej: funciona bien en MJ v6, combinar con CFG 7..." data-u-style="u027"/>
+  </div>
+<!-- NEGATIVE PROMPT -->
+  <div class="neg-prompt-wrap" id="negWrap">
+    <label class="neg-label" data-u-style="u014">
+      <span class="neg-badge">− NEGATIVE</span>
+      <span data-u-style="u028">Prompt negativo · excluir de la generación</span>
+      <button class="api-toggle-btn" data-u-style="u029" data-onclick="toggleNeg()">Ocultar</button>
+    </label>
+    <textarea id="negOutput" class="neg-prompt-wrap" data-u-style="u030" placeholder="ej: deformed hands, extra fingers, unrealistic proportions, cartoon, anime, young face, CGI..."></textarea>
+    <div class="row" data-u-style="u031">
+      <button class="bg" data-u-style="u032" data-onclick="autoNegPrompt()">✦ Auto-generar negativo</button>
+      <button class="bg" data-u-style="u032" data-onclick="copyNeg()">Copiar negativo</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SHARE MODAL ══ -->
+<div class="share-modal-overlay" id="shareOverlay" data-onclick="if(event.target===this)closeShare()">
+  <div class="share-modal">
+    <button class="share-close" data-onclick="closeShare()">✕</button>
+    <h2>Compartir configuración</h2>
+    <p data-u-style="u033">
+      Genera una URL con toda la configuración actual codificada. Quien abra el link verá exactamente los mismos campos configurados.
+    </p>
+    <div data-u-style="u034">INCLUIR EN LA URL:</div>
+    <div class="share-what-row">
+      <button class="share-toggle on" id="stg-persona" data-onclick="this.classList.toggle('on');buildShareURL()">Persona</button>
+      <button class="share-toggle on" id="stg-outfit" data-onclick="this.classList.toggle('on');buildShareURL()">Outfit</button>
+      <button class="share-toggle on" id="stg-hair" data-onclick="this.classList.toggle('on');buildShareURL()">Cabello</button>
+      <button class="share-toggle on" id="stg-makeup" data-onclick="this.classList.toggle('on');buildShareURL()">Maquillaje</button>
+      <button class="share-toggle on" id="stg-cam" data-onclick="this.classList.toggle('on');buildShareURL()">Cámara</button>
+      <button class="share-toggle on" id="stg-scene" data-onclick="this.classList.toggle('on');buildShareURL()">Escena</button>
+      <button class="share-toggle on" id="stg-output" data-onclick="this.classList.toggle('on');buildShareURL()">Salida/Formato</button>
+      <button class="share-toggle on" id="stg-legs" data-onclick="this.classList.toggle('on');buildShareURL()">Medias</button>
+    </div>
+    <div class="share-url-box" id="shareURLBox" data-onclick="copyShareURL()" title="Click para copiar">Haz click en 'Generar URL' para crear el link...</div>
+    <div id="shareURLLen" data-u-style="u035"></div>
+    <div class="row">
+      <button class="bp" data-onclick="buildShareURL()">🔗 Generar URL</button>
+      <button class="bg" data-onclick="copyShareURL()">Copiar link</button>
+      <button class="bt" data-onclick="closeShare()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" data-onclick="closeLightbox()">
+  <button class="lightbox-close" data-onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+<!-- Theme toggle -->
+<button class="theme-btn" data-onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+<!-- Keyboard hints -->
+<div class="kbd-hint" id="kbdHint">
+  <strong data-u-style="u036">Atajos de teclado</strong>
+  <kbd>Ctrl</kbd>+<kbd>G</kbd> Generar &nbsp;
+  <kbd>Ctrl</kbd>+<kbd>R</kbd> Random<br>
+  <kbd>Ctrl</kbd>+<kbd>S</kbd> Guardar preset &nbsp;
+  <kbd>Ctrl</kbd>+<kbd>C</kbd>* Copiar output<br>
+  <kbd>Ctrl</kbd>+<kbd>B</kbd> Batch &nbsp;
+  <kbd>Ctrl</kbd>+<kbd>?</kbd> Esta ayuda
+</div>
+
+<!-- HISTORIAL -->
+<section class="panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">✦</span>Historial de prompts (últimos 20)</div>
+  <div class="row"><button class="bd" data-onclick="clearHistory()">Borrar historial</button></div>
+  <div class="hist-list" id="histList"><span data-u-style="u037">Sin historial aún. Genera un prompt para empezar.</span></div>
+</section>
+
+<!-- ══ AI STUDIO PANEL ══ -->
+<section class="panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">🤖</span>AI Studio · Asistente inteligente</div>
+
+  <!-- Pestañas de modo -->
+  <div class="cat-tabs" id="aiModeTabs">
+    <button class="cat-tab active" data-onclick="switchAIMode('evaluar',this)">✦ Evaluar prompt</button>
+    <button class="cat-tab" data-onclick="switchAIMode('mejorar',this)">⬆ Mejorar prompt</button>
+    <button class="cat-tab" data-onclick="switchAIMode('chat',this)">💬 Chat natural</button>
+    <button class="cat-tab" data-onclick="switchAIMode('sugerir',this)">💡 Sugeridor</button>
+  </div>
+
+  <!-- MODO: EVALUAR -->
+  <div class="ai-mode-panel active" id="aimode-evaluar">
+    <p data-u-style="u033">La IA analiza el prompt generado, detecta incoherencias y da una puntuación de efectividad.</p>
+    <div class="ai-send-row">
+      <button class="bp" data-onclick="aiAction('evaluar')">✦ Evaluar prompt actual</button>
+    </div>
+    <div class="ai-response-box" id="aiResp-evaluar">
+      <span class="ai-response-provider-tag api-anthropic" id="aiTag-evaluar"></span>
+      <div id="aiRespContent-evaluar"></div>
+    </div>
+  </div>
+
+  <!-- MODO: MEJORAR -->
+  <div class="ai-mode-panel" id="aimode-mejorar" data-u-style="u016">
+    <p data-u-style="u033">La IA reescribe el prompt para maximizar su efectividad en el modelo de imagen seleccionado.</p>
+    <div class="ai-send-row">
+      <button class="bp" data-onclick="aiAction('mejorar')">⬆ Mejorar y reescribir</button>
+      <button class="bg" data-onclick="applyImprovedPrompt()">← Aplicar al output</button>
+    </div>
+    <div class="ai-response-box" id="aiResp-mejorar">
+      <span class="ai-response-provider-tag api-anthropic" id="aiTag-mejorar"></span>
+      <div id="aiRespContent-mejorar"></div>
+    </div>
+  </div>
+
+  <!-- MODO: CHAT NATURAL -->
+  <div class="ai-mode-panel" id="aimode-chat" data-u-style="u016">
+    <p data-u-style="u038">Describe en lenguaje natural lo que quieres. La IA configurará los campos automáticamente y explicará sus decisiones.</p>
+    <div class="chat-wrap">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg system">Describe la sesión fotográfica que imaginas y configuraré todos los parámetros por ti.</div>
+      </div>
+      <div class="chat-input-row">
+        <input id="chatInput" placeholder="ej: retrato editorial de una persona adulta de 35 años, blazer rojo, hotel boutique, luz cinematográfica..." data-onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="bp" data-u-style="u039" data-onclick="sendChat()">↵</button>
+      </div>
+    </div>
+    <div class="row" data-u-style="u018">
+      <button class="bg" data-onclick="clearChat()">Limpiar chat</button>
+    </div>
+  </div>
+
+  <!-- MODO: SUGERIDOR -->
+  <div class="ai-mode-panel" id="aimode-sugerir" data-u-style="u016">
+    <p data-u-style="u033">Basándose en tus presets guardados, la IA sugiere qué nuevas combinaciones explorar.</p>
+    <div class="ai-send-row">
+      <button class="bp" data-onclick="aiAction('sugerir')">💡 Analizar mis presets y sugerir</button>
+    </div>
+    <div id="sugestorResult" class="suggestion-cards" data-u-style="u016"></div>
+  </div>
+</section>
+
+<!-- ══ DALL·E IMAGE PREVIEW ══ -->
+<section class="dalle-panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">🎨</span>DALL·E · Generar imagen directamente</div>
+  <p data-u-style="u038">Usa tu key de OpenAI para generar la imagen del prompt actual sin salir de la app.</p>
+  <div class="dalle-size-row">
+    <label data-u-style="u040">Tamaño:</label>
+    <select id="dalleSize" data-u-style="u005">
+      <option value="1024x1792">1024×1792 (Vertical retrato)</option>
+      <option value="1792x1024">1792×1024 (Horizontal)</option>
+      <option value="1024x1024">1024×1024 (Cuadrado)</option>
+    </select>
+    <label data-u-style="u040">Calidad:</label>
+    <select id="dalleQuality" data-u-style="u005">
+      <option value="standard">Standard</option>
+      <option value="hd" selected>HD</option>
+    </select>
+    <label data-u-style="u040">Cantidad:</label>
+    <select id="dalleN" data-u-style="u005">
+      <option value="1" selected>1 imagen</option>
+      <option value="2">2 imágenes</option>
+      <option value="3">3 imágenes</option>
+    </select>
+  </div>
+  <div class="row" data-u-style="u014">
+    <button class="bp" data-onclick="generateDalle()">🎨 Generar imagen con DALL·E</button>
+    <button class="bg" data-onclick="clearDalleGrid()">Limpiar galería</button>
+  </div>
+  <div id="dalleStatus" data-u-style="u041"></div>
+  <div class="expiry-warn" id="dalleExpiryWarn">⚠ Las URLs de DALL·E expiran en ~1 hora. Usa "↓ DL" para descargar las imágenes que quieras conservar, o "+ Biblioteca" para guardarlas como base64.</div>
+  <div class="dalle-grid" id="dalleGrid"></div>
+</section>
+
+<!-- ══ ANALYTICS ── -->
+<section class="panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">📊</span>Analytics · Tu actividad</div>
+  <div class="analytics-grid" id="analyticsGrid">
+    <div class="stat-card"><div class="stat-n" id="statPrompts">0</div><div class="stat-l">Prompts generados</div></div>
+    <div class="stat-card"><div class="stat-n" id="statPresets">0</div><div class="stat-l">Presets guardados</div></div>
+    <div class="stat-card"><div class="stat-n" id="statPipeline">0</div><div class="stat-l">En pipeline</div></div>
+    <div class="stat-card"><div class="stat-n" id="statResults">0</div><div class="stat-l">Resultados guardados</div></div>
+  </div>
+  <div class="bar-chart" id="catBarChart" data-u-style="u042"></div>
+  <div class="row" data-u-style="u018"><button class="bg" data-onclick="refreshAnalytics()">↻ Actualizar</button></div>
+</section>
+
+<!-- ══ PIPELINE EDITORIAL ══ -->
+<section class="panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">🎬</span>Pipeline editorial · Estado de producción</div>
+  <p data-u-style="u043">Gestiona el ciclo de vida de tus prompts: de la idea a la publicación.</p>
+  <div class="row">
+    <button class="bp" data-onclick="addToPipeline()">+ Añadir prompt actual al pipeline</button>
+    <button class="bg" data-onclick="clearPipeline()">🗑 Vaciar pipeline</button>
+  </div>
+  <div class="kanban-cols" id="kanbanBoard">
+    <div class="kanban-col">
+      <div class="kanban-col-head"><span>📝 Pendiente</span><span id="kCount-pending" data-u-style="u044">0</span></div>
+      <div id="kCol-pending"></div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-col-head"><span>⚙ Generado</span><span id="kCount-generated" data-u-style="u045">0</span></div>
+      <div id="kCol-generated"></div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-col-head"><span>👁 Revisado</span><span id="kCount-reviewed" data-u-style="u046">0</span></div>
+      <div id="kCol-reviewed"></div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-col-head"><span>✅ Publicado</span><span id="kCount-published" data-u-style="u047">0</span></div>
+      <div id="kCol-published"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ BIBLIOTECA DE RESULTADOS ══ -->
+<section class="panel">
+  <div class="sec" data-u-style="u001"><span class="sec-n">🖼</span>Biblioteca de resultados</div>
+  <p data-u-style="u033">Vincula el prompt con el resultado real. Puntúa, anota, aprende qué funciona.</p>
+  <div class="g2" data-u-style="u048">
+    <div class="box">
+      <label>URL del resultado generado</label>
+      <input id="resultUrl" placeholder="https://... o nombre de archivo"/>
+      <label data-u-style="u018">Notas</label>
+      <input id="resultNotes" placeholder="ej: excelente iluminación, thigh-high perfectas..."/>
+    </div>
+    <div class="box">
+      <label>Puntuación</label>
+      <div class="result-stars" id="resultStarsInput">
+        <span class="result-star" data-onclick="setResultStar(1)">★</span>
+        <span class="result-star" data-onclick="setResultStar(2)">★</span>
+        <span class="result-star" data-onclick="setResultStar(3)">★</span>
+        <span class="result-star" data-onclick="setResultStar(4)">★</span>
+        <span class="result-star" data-onclick="setResultStar(5)">★</span>
+      </div>
+      <div class="row" data-u-style="u049">
+        <button class="bp" data-onclick="saveResult()">Guardar resultado</button>
+        <button class="bg" data-onclick="toggleResultsView()">⊞ Galería / Lista</button>
+        <button class="bd" data-onclick="clearResults()">Borrar todos</button>
+      </div>
+      <div data-u-style="u050">
+        <label data-u-style="u004">Filtrar ★:</label>
+        <select id="resultStarFilter" data-u-style="u005" data-onchange="renderResults()">
+          <option value="0">Todos</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★+</option>
+          <option value="3">★★★+</option>
+        </select>
+        <label data-u-style="u004">Categoría:</label>
+        <select id="resultCatFilter" data-u-style="u005" data-onchange="renderResults()">
+          <option value="">Todas</option>
+          <option value="cotidiana">Cotidiana</option>
+          <option value="gala">Gala</option>
+          <option value="lenceria">Lencería</option>
+          <option value="disfraz">Disfraz</option>
+          <option value="banyo">Baño</option>
+          <option value="deporte">Deporte</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="resultsList"></div>
+</section>
+
+<!-- PRESETS GUARDADOS -->
+<section class="panel">
+  <div data-u-style="u051">
+    <div class="sec" data-u-style="u052"><span class="sec-n">★</span>Presets guardados<span class="preset-count-badge" id="presetCountBadge">0 presets</span></div>
+  </div>
+  <div class="tag-filter-row" id="tagFilterRow" data-u-style="u053">
+    <span class="tag-filter-label">Filtrar:</span>
+    <button class="tag-filter-btn active" data-onclick="setTagFilter('all',this)">Todos</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('cotidiana',this)">Cotidiana</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('gala',this)">Gala</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('lenceria',this)">Lencería</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('disfraz',this)">Disfraz</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('banyo',this)">Baño</button>
+    <button class="tag-filter-btn" data-onclick="setTagFilter('deporte',this)">Deporte</button>
+  </div>
+  <div class="preset-search-wrap" data-u-style="u014">
+    <input id="presetSearch" placeholder="Buscar preset por nombre..." data-oninput="renderPresets()"/>
+  </div>
+  <div class="g2" data-u-style="u053">
+    <div class="box"><label>Nombre preset</label><input id="presetName" placeholder="ej: enfermera vintage negro thigh-high"/></div>
+    <div class="box"><label>Acciones</label>
+      <div class="row">
+        <button class="bg" data-onclick="savePreset()">Guardar preset</button>
+        <button class="bt" data-onclick="exportPresetsJSON()">↓ Export JSON</button>
+        <button class="bl" data-onclick="el('importFile').click()">↑ Import JSON</button>
+        <button class="bg" data-onclick="openShare()" data-u-style="u054">🔗 Compartir</button>
+        <button class="bd" data-onclick="clearPresets()">Borrar todos</button>
+        <button class="bt" data-onclick="backupAll()">⬇ Backup</button>
+        <button class="bt" data-onclick="restoreBackup()">⬆ Restaurar</button>
+        <input type="file" id="restoreFile" accept=".json" data-u-style="u016" data-onchange="doRestoreBackup(this)"/>
+        <input type="file" id="importFile" accept=".json" data-u-style="u016" data-onchange="importPresetsJSON(this)"/>
+      </div>
+    </div>
+  </div>
+  <div id="presetList" data-u-style="u055">Sin presets guardados.</div>
+</section>
+
+</div><!-- /app -->
+
+<!-- ══ A/B COMPARADOR MODAL ══ -->
+<div class="ab-modal-overlay" id="abOverlay" data-onclick="if(event.target===this)closeAB()">
+  <div class="ab-modal">
+    <button class="ab-close" data-onclick="closeAB()">✕</button>
+    <h2>Comparador A/B</h2>
+    <div class="ab-modal-sub">Compara dos variantes del mismo prompt con parámetros distintos — elige la que mejor funciona</div>
+    <div class="ab-cols">
+      <div class="ab-col">
+        <div class="ab-col-head ab-col-head-a">▲ Variante A</div>
+        <label>Intensidad editorial A</label>
+        <select id="abSensualA"><option value="off">Neutro</option><option value="soft" selected>Elegante</option><option value="medium">Editorial</option><option value="high">Intenso</option></select>
+        <label>Seguridad A</label>
+        <select id="abSafeA"><option value="off">Sin cláusula</option><option value="soft" selected>Suave</option><option value="strict">Estricto</option></select>
+        <label>Estilo visual A</label>
+        <select id="abStyleA">
+          <option>fotografía realista natural</option><option>editorial de moda elegante</option>
+          <option>ultra realista 4K</option><option>fotografía profesional de revista</option>
+          <option>lifestyle doméstico realista</option><option>cinematográfico suave</option>
+        </select>
+        <label data-u-style="u014">Prompt A generado</label>
+        <textarea id="abOutputA" readonly></textarea>
+        <div class="row"><button class="bp" data-onclick="generateAB('A')">▶ Generar A</button><button class="bg" data-onclick="copyAB('A')">Copiar A</button><button class="bl" data-onclick="useAB('A')">← Usar A</button></div>
+      </div>
+      <div class="ab-col">
+        <div class="ab-col-head ab-col-head-b">▲ Variante B</div>
+        <label>Intensidad editorial B</label>
+        <select id="abSensualB"><option value="off">Neutro</option><option value="soft">Elegante</option><option value="medium" selected>Editorial</option><option value="high">Intenso</option></select>
+        <label>Seguridad B</label>
+        <select id="abSafeB"><option value="off">Sin cláusula</option><option value="soft">Suave</option><option value="strict" selected>Estricto</option></select>
+        <label>Estilo visual B</label>
+        <select id="abStyleB">
+          <option>fotografía realista natural</option><option selected>editorial de moda elegante</option>
+          <option>ultra realista 4K</option><option>fotografía profesional de revista</option>
+          <option>lifestyle doméstico realista</option><option>cinematográfico suave</option>
+        </select>
+        <label data-u-style="u014">Prompt B generado</label>
+        <textarea id="abOutputB" readonly></textarea>
+        <div class="row"><button class="br" data-onclick="generateAB('B')">▶ Generar B</button><button class="bg" data-onclick="copyAB('B')">Copiar B</button><button class="bl" data-onclick="useAB('B')">← Usar B</button></div>
+      </div>
+    </div>
+    <div class="ab-actions">
+      <button class="bp" data-onclick="generateAB('A');generateAB('B')">▶▶ Generar ambos</button>
+      <button class="bg" data-onclick="closeAB()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECUENCIA MODAL ══ -->
+<div class="seq-modal-overlay" id="seqOverlay" data-onclick="if(event.target===this)closeSeq()">
+  <div class="seq-modal">
+    <button class="seq-close" data-onclick="closeSeq()">✕</button>
+    <h2>Modo Secuencia</h2>
+    <div class="seq-modal-sub">Genera N prompts variando un solo parámetro — misma modelo, múltiples variaciones</div>
+    <div class="seq-param-row">
+      <div class="box">
+        <label>Parámetro a variar</label>
+        <select id="seqParam">
+          <option value="age">Edad (18→80)</option>
+          <option value="sensual">Intensidad editorial</option>
+          <option value="legtype">Tipo de medias</option>
+          <option value="outfitColor">Color de ropa</option>
+          <option value="lighting">Iluminación</option>
+          <option value="hairColor">Color de cabello</option>
+          <option value="scene">Escenario</option>
+          <option value="expression">Expresión</option>
+          <option value="shoes">Calzado</option>
+          <option value="style">Estilo visual</option>
+        </select>
+      </div>
+      <div class="box">
+        <label>Cantidad de pasos</label>
+        <select id="seqCount">
+          <option value="3">3 variaciones</option>
+          <option value="5" selected>5 variaciones</option>
+          <option value="7">7 variaciones</option>
+          <option value="10">10 variaciones</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <button class="bp" data-onclick="runSequence()">▶ Generar secuencia</button>
+      <button class="bg" data-onclick="copySeqOutput()">Copiar todo</button>
+      <button class="bg" data-onclick="closeSeq()">Cerrar</button>
+    </div>
+    <div id="seqResult" class="seq-result" data-u-style="u016"></div>
+  </div>
+</div>
+<script src="assets/app.js" defer></script>
+
+</body>
+</html>
