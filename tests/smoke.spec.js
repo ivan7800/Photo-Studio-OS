@@ -47,3 +47,20 @@ test('default UI uses general wardrobe wording', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: /Layering editorial/i })).toBeVisible();
 });
+
+
+test('v2 workspace navigation keeps Studio controls available', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: /Studio/ }).first().click();
+  await expect(page.locator('#view-studio')).toHaveClass(/active/);
+  await expect(page.locator('#age')).toBeVisible();
+  await expect(page.locator('#output')).toBeVisible();
+});
+
+test('Settings contains API keys and manifest/service worker are reachable', async ({ page, request }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: /Settings/ }).first().click();
+  await expect(page.locator('#keyOpenAI')).toBeVisible();
+  expect((await request.get('./manifest.webmanifest')).ok()).toBeTruthy();
+  expect((await request.get('./service-worker.js')).ok()).toBeTruthy();
+});

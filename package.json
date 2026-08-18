@@ -1,12 +1,15 @@
 {
-  "name": "photo-studio-os-v14-contextual-wardrobe",
-  "version": "1.4.0",
+  "name": "photo-studio-os",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "check:js": "node --check assets/app.js",
+    "serve": "python -m http.server 8080"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0"
-  }
+  },
+  "description": "Photo Studio OS — AI Photography Director Suite"
 }
