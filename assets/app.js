@@ -1,4 +1,19 @@
 
+/* One-time namespace migration from v1.x/v9 storage to v2.0. */
+function migrateLegacyStorage(){
+  const pairs=[
+    ['psos14History','psos20History'],['psos14Presets','psos20Presets'],['psos14Pipeline','psos20Pipeline'],
+    ['psos14Results','psos20Results'],['psos14Theme','psos20Theme'],['psos14Chat','psos20Chat'],
+    ['psv9SessionKeys','psos20SessionKeys'],['psv9KeyPrefs','psos20KeyPrefs']
+  ];
+  for(const [oldKey,newKey] of pairs){
+    try{if(localStorage.getItem(newKey)===null && localStorage.getItem(oldKey)!==null) localStorage.setItem(newKey,localStorage.getItem(oldKey));}catch(e){}
+    try{if(sessionStorage.getItem(newKey)===null && sessionStorage.getItem(oldKey)!==null) sessionStorage.setItem(newKey,sessionStorage.getItem(oldKey));}catch(e){}
+  }
+}
+migrateLegacyStorage();
+
+
 
 /* ──────────────────────────────────────────────────────────────
    v1.2 HARDENED EVENT BRIDGE
@@ -77,7 +92,7 @@ document.addEventListener('DOMContentLoaded',bindDeclarativeEvents);
 
 
 /* ══════════════════════════════════════════════════
-   PHOTO STUDIO OS v1.5 — CORE ENGINE (POLISHED CONTEXTUAL WARDROBE)
+   PHOTO STUDIO OS v2.0 — CORE ENGINE
 ══════════════════════════════════════════════════ */
 let activeCat='cotidiana';
 let outputLang='es';
@@ -1007,15 +1022,15 @@ function translateOutput(){
 
 /* ── HISTORY ── */
 function addToHistory(text){
-  let hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
+  let hist=JSON.parse(localStorage.getItem('psos20History')||'[]');
   const entry={text:text.substring(0,300),date:new Date().toISOString(),lang:outputLang,cat:activeCat};
   hist=hist.filter(h=>h.text!==entry.text);
   hist.unshift(entry);
-  localStorage.setItem('psos14History',JSON.stringify(hist.slice(0,20)));
+  localStorage.setItem('psos20History',JSON.stringify(hist.slice(0,20)));
   renderHistory();
 }
 function renderHistory(){
-  const hist=safeJSON('psos14History',[]);
+  const hist=safeJSON('psos20History',[]);
   const t=el('histList');
   if(!t)return;
   if(!hist.length){t.innerHTML="<span data-u-style=\"u069\">Sin historial aún.</span>";return}
@@ -1027,17 +1042,17 @@ function renderHistory(){
     </div>`).join('');
 }
 function loadHistory(i){
-  const hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
+  const hist=JSON.parse(localStorage.getItem('psos20History')||'[]');
   if(hist[i]) el('output').value=hist[i].text;
 }
 function deleteHistory(i){
-  const hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
+  const hist=JSON.parse(localStorage.getItem('psos20History')||'[]');
   hist.splice(i,1);
-  localStorage.setItem('psos14History',JSON.stringify(hist));
+  localStorage.setItem('psos20History',JSON.stringify(hist));
   renderHistory();
 }
 function clearHistory(){
-  if(confirm('¿Borrar todo el historial?')){localStorage.removeItem('psos14History');renderHistory();}
+  if(confirm('¿Borrar todo el historial?')){localStorage.removeItem('psos20History');renderHistory();}
 }
 
 function updateSensualUI(){return updateEditorialUI();}
@@ -1135,19 +1150,19 @@ function applyState(o){
 }
 
 
-function loadPreset(i){const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');if(!list[i])return;list[i].useCount=(list[i].useCount||0)+1;localStorage.setItem('psos14Presets',JSON.stringify(list));applyState(list[i].state);}
-function toggleFavorite(i){const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');if(!list[i])return;list[i].fav=!list[i].fav;localStorage.setItem('psos14Presets',JSON.stringify(list));renderPresets();}
-function deletePreset(i){const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');list.splice(i,1);localStorage.setItem('psos14Presets',JSON.stringify(list));renderPresets()}
+function loadPreset(i){const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');if(!list[i])return;list[i].useCount=(list[i].useCount||0)+1;localStorage.setItem('psos20Presets',JSON.stringify(list));applyState(list[i].state);}
+function toggleFavorite(i){const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');if(!list[i])return;list[i].fav=!list[i].fav;localStorage.setItem('psos20Presets',JSON.stringify(list));renderPresets();}
+function deletePreset(i){const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');list.splice(i,1);localStorage.setItem('psos20Presets',JSON.stringify(list));renderPresets()}
 
 /* ── CLONE PRESET ── */
 function clonePreset(i){
-  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
+  const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
   if(!list[i]) return;
   const clone=JSON.parse(JSON.stringify(list[i]));
   clone.name='[Clone] '+clone.name;
   clone.date=new Date().toISOString();
   list.splice(i+1,0,clone);
-  localStorage.setItem('psos14Presets',JSON.stringify(list.slice(0,80)));
+  localStorage.setItem('psos20Presets',JSON.stringify(list.slice(0,80)));
   renderPresets();
   // flash the preset name input with the clone name so user can rename easily
   const inp=el('presetName');
@@ -1184,7 +1199,7 @@ function generateAB(v){
 async function copyAB(v){
   const ta=el('abOutput'+v);
   if(!ta||!ta.value) return;
-  try{await navigator.clipboard.writeText(ta.value);alert('Variante '+v+' copiada ✓');}
+  try{await navigator.clipboard.writeText(ta.value);notify('Variante '+v+' copiada ✓');}
   catch(e){ta.select();}
 }
 function useAB(v){
@@ -1237,33 +1252,33 @@ function runSequence(){
 async function copySeqOutput(){
   const r=el('seqResult');
   if(!r||!r.textContent) return;
-  try{await navigator.clipboard.writeText(r.textContent);alert('Secuencia copiada ✓');}
+  try{await navigator.clipboard.writeText(r.textContent);notify('Secuencia copiada ✓');}
   catch(e){r.select&&r.select();}
 }
-function clearPresets(){if(confirm('¿Borrar todos los presets guardados?')){localStorage.removeItem('psos14Presets');renderPresets()}}
+function clearPresets(){if(confirm('¿Borrar todos los presets guardados?')){localStorage.removeItem('psos20Presets');renderPresets()}}
 
 /* ── EXPORT / IMPORT JSON ── */
 function exportPresetsJSON(){
-  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
-  if(!list.length){alert('No hay presets guardados para exportar.');return;}
+  const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
+  if(!list.length){notify('No hay presets guardados para exportar.');return;}
   const blob=new Blob([JSON.stringify(list,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='photo_studio_os_v14_presets.json';a.click();URL.revokeObjectURL(a.href);
 }
 function importPresetsJSON(input){
   const file=input.files[0];if(!file)return;
-  if(file.size>2*1024*1024){alert('Archivo demasiado grande. Máximo 2 MB para proteger el navegador.');input.value='';return;}
+  if(file.size>2*1024*1024){notify('Archivo demasiado grande. Máximo 2 MB para proteger el navegador.');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
       if(!Array.isArray(data))throw new Error('Formato inválido');
-      const existing=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
+      const existing=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
       const merged=[...data,...existing].slice(0,80);
-      localStorage.setItem('psos14Presets',JSON.stringify(merged));
+      localStorage.setItem('psos20Presets',JSON.stringify(merged));
       renderPresets();
-      alert('Importados '+data.length+' presets correctamente.');
-    }catch(err){alert('Error al importar: '+err.message);}
+      notify('Importados '+data.length+' presets correctamente.');
+    }catch(err){notify('Error al importar: '+err.message);}
   };
   reader.readAsText(file);
   input.value='';
@@ -2217,23 +2232,23 @@ const STARTER_PRESETS=[
 ];
 
 function loadStarterPresets(){
-  const existing=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
+  const existing=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
   if(existing.length>0) return; // only load if user has no presets yet
-  localStorage.setItem('psos14Presets',JSON.stringify(STARTER_PRESETS));
+  localStorage.setItem('psos20Presets',JSON.stringify(STARTER_PRESETS));
   renderPresets();
 }
 
 /* ══════════════════════════════════════════════════
-   PHOTO STUDIO OS v1.4 — LEGWEAR + SHARE
+   PHOTO STUDIO OS v2.0 — LEGWEAR + SHARE
 ══════════════════════════════════════════════════ */
 
 /* ── FIX: DALL·E n>1 (parallel calls, DALL·E 3 only supports n=1) ── */
 async function generateDalle(){
   if(!validateAdultOnly()) return;
   const keys=getKeys();
-  if(!keys.openai){alert('Añade tu API key de OpenAI en el panel de keys.');return;}
+  if(!keys.openai){notify('Añade tu API key de OpenAI en Settings.');return;}
   let prompt=el('output')?el('output').value:'';
-  if(!prompt){alert('Genera un prompt primero.');return;}
+  if(!prompt){notify('Genera un prompt primero.');return;}
   prompt=dalleRemap(translateES(prompt));
   const size=val('dalleSize')||'1024x1792';
   const quality=val('dalleQuality')||'hd';
@@ -2296,13 +2311,13 @@ async function generateDalle(){
 
 /* ── FIX: saveDalleToLibrary stores base64, never expires ── */
 function saveDalleToLibrary(dataUrl){
-  const results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
+  const results=JSON.parse(localStorage.getItem('psos20Results')||'[]');
   const prompt=el('output')?el('output').value:'';
   // Store full base64 — persists forever
   results.unshift({id:Date.now(),prompt:prompt.substring(0,200),url:dataUrl,notes:'Generado con DALL·E 3',score:0,date:new Date().toISOString(),cat:activeCat});
-  localStorage.setItem('psos14Results',JSON.stringify(results.slice(0,200)));
+  localStorage.setItem('psos20Results',JSON.stringify(results.slice(0,200)));
   renderResults();refreshAnalytics();
-  alert('Guardado en biblioteca ✓ (imagen permanente en base64)');
+  notify('Guardado en biblioteca ✓ (imagen permanente en base64)');
 }
 
 /* ── FIX: downloadDalle works with base64 ── */
@@ -2362,7 +2377,7 @@ async function copyShareURL(){
     const orig=box.style.borderColor;
     box.style.borderColor='rgba(82,184,174,.6)';
     setTimeout(()=>box.style.borderColor=orig,1200);
-    alert('Link copiado ✓');
+    notify('Link copiado ✓');
   }catch(e){box&&box.select&&box.select();}
 }
 function loadFromURL(){
@@ -2390,10 +2405,10 @@ function toggleTheme(){
   document.body.classList.toggle('light-mode');
   const btn=document.querySelector('.theme-btn');
   if(btn) btn.textContent=document.body.classList.contains('light-mode')?'🌒':'🌙';
-  localStorage.setItem('psos14Theme',document.body.classList.contains('light-mode')?'light':'dark');
+  localStorage.setItem('psos20Theme',document.body.classList.contains('light-mode')?'light':'dark');
 }
 function loadTheme(){
-  if(localStorage.getItem('psos14Theme')==='light'){
+  if(localStorage.getItem('psos20Theme')==='light'){
     document.body.classList.add('light-mode');
     const btn=document.querySelector('.theme-btn');
     if(btn) btn.textContent='🌒';
@@ -2443,13 +2458,13 @@ function autoNegPrompt(){
 }
 async function copyNeg(){
   const t=el('negOutput');if(!t||!t.value)return;
-  try{await navigator.clipboard.writeText(t.value);alert('Negativo copiado ✓');}catch(e){t.select();}
+  try{await navigator.clipboard.writeText(t.value);notify('Negativo copiado ✓');}catch(e){t.select();}
 }
 
 /* ── PRESET SEARCH (override renderPresets) ── */
 const _origRenderPresets=window.renderPresets;
 function renderPresets(){
-  const list=safeJSON('psos14Presets',[]);
+  const list=safeJSON('psos20Presets',[]);
   const t=el('presetList');
   const badge=el('presetCountBadge');
   if(!t)return;
@@ -2489,7 +2504,7 @@ function renderPresets(){
 
 /* ── PRESET VERSION HISTORY ── */
 function savePreset(){
-  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
+  const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
   const name=val('presetName')||'Preset sin nombre';
   // Check if same name exists → version it
   const existing=list.findIndex(p=>p.name===name);
@@ -2503,23 +2518,23 @@ function savePreset(){
   } else {
     list.unshift({name,date:new Date().toISOString(),state,versions:[]});
   }
-  localStorage.setItem('psos14Presets',JSON.stringify(list.slice(0,80)));
+  localStorage.setItem('psos20Presets',JSON.stringify(list.slice(0,80)));
   renderPresets();
 }
 function showVersions(idx){
-  const list=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
-  const p=list[idx];if(!p||!p.versions||!p.versions.length){alert('Sin versiones anteriores.');return;}
+  const list=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
+  const p=list[idx];if(!p||!p.versions||!p.versions.length){notify('Sin versiones anteriores.');return;}
   const names=p.versions.map((v,i)=>`v${i+1} · ${new Date(v.date).toLocaleString()}`).join('\n');
   const choice=prompt(`Versiones de "${p.name}":\n${names}\n\nEscribe el número (1-${p.versions.length}) para restaurar, o cancela:`);
   if(!choice)return;
   const vi=parseInt(choice)-1;
-  if(isNaN(vi)||vi<0||vi>=p.versions.length){alert('Número inválido.');return;}
+  if(isNaN(vi)||vi<0||vi>=p.versions.length){notify('Número inválido.');return;}
   if(confirm(`¿Restaurar versión ${vi+1}? La versión actual se guardará como nueva versión.`)){
     const current=p.state;
     p.versions.unshift({state:current,date:p.date});
     p.state=p.versions.splice(vi+1,1)[0].state;
     p.date=new Date().toISOString();
-    localStorage.setItem('psos14Presets',JSON.stringify(list));
+    localStorage.setItem('psos20Presets',JSON.stringify(list));
     applyState(p.state);renderPresets();
   }
 }
@@ -2551,7 +2566,7 @@ function toggleResultsView(){
 
 /* ── RESULTS RENDER (upgraded) ── */
 function renderResults(){
-  const allResults=safeJSON('psos14Results',[]);
+  const allResults=safeJSON('psos20Results',[]);
   const minStar=parseInt(val('resultStarFilter')||'0');
   const catF=val('resultCatFilter')||'';
   const results=allResults.filter(r=>{
@@ -2615,15 +2630,15 @@ function initKanbanDnD(){
   });
 }
 function movePipelineToStage(id,stage){
-  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
   const item=pipeline.find(p=>p.id===id);
-  if(item&&PIPELINE_STAGES.includes(stage)){item.stage=stage;localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));renderPipeline();}
+  if(item&&PIPELINE_STAGES.includes(stage)){item.stage=stage;localStorage.setItem('psos20Pipeline',JSON.stringify(pipeline));renderPipeline();}
 }
 
 /* ── EXPORT PIPELINE ── */
 function exportPipeline(){
-  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
-  if(!pipeline.length){alert('El pipeline está vacío.');return;}
+  const pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
+  if(!pipeline.length){notify('El pipeline está vacío.');return;}
   const blob=new Blob([JSON.stringify(pipeline,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='photo_studio_pipeline_'+Date.now()+'.json';a.click();URL.revokeObjectURL(a.href);
@@ -2637,7 +2652,7 @@ function createPresetFromSuggestion(name,cat){
   if(idx!==undefined) switchCat(cat,document.querySelectorAll('.cat-tab')[idx]);
   if(el('presetName')) el('presetName').value=name;
   savePreset();
-  alert(`Preset "${name}" creado. Puedes cargarlo y configurarlo desde el panel de presets.`);
+  notify(`Preset "${name}" creado. Puedes cargarlo y configurarlo desde el panel de presets.`);
 }
 
 /* ── PIPELINE RENDER with drag ── */
@@ -2648,12 +2663,12 @@ function createPresetFromSuggestion(name,cat){
   /* ── BACKUP COMPLETO ── */
 function backupAll(){
   const data={
-    version:'psv9-backup-v1',
+    version:'psos20-backup-v1',
     date:new Date().toISOString(),
-    presets:JSON.parse(localStorage.getItem('psos14Presets')||'[]'),
-    pipeline:JSON.parse(localStorage.getItem('psos14Pipeline')||'[]'),
-    results:JSON.parse(localStorage.getItem('psos14Results')||'[]'),
-    history:JSON.parse(localStorage.getItem('psos14History')||'[]'),
+    presets:JSON.parse(localStorage.getItem('psos20Presets')||'[]'),
+    pipeline:JSON.parse(localStorage.getItem('psos20Pipeline')||'[]'),
+    results:JSON.parse(localStorage.getItem('psos20Results')||'[]'),
+    history:JSON.parse(localStorage.getItem('psos20History')||'[]'),
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -2664,20 +2679,20 @@ function backupAll(){
 function restoreBackup(){el('restoreFile')&&el('restoreFile').click();}
 function doRestoreBackup(input){
   const file=input.files[0];if(!file)return;
-  if(file.size>2*1024*1024){alert('Archivo demasiado grande. Máximo 2 MB para proteger el navegador.');input.value='';return;}
+  if(file.size>2*1024*1024){notify('Archivo demasiado grande. Máximo 2 MB para proteger el navegador.');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
-      if(!data.version||!data.version.startsWith('psv9')){alert('Archivo de backup no válido.');return;}
+      if(!data.version||!(data.version.startsWith('psos20')||data.version.startsWith('psv9'))){notify('Archivo de backup no válido.');return;}
       if(!confirm('¿Restaurar backup? Esto sobrescribirá presets, pipeline, biblioteca e historial actuales.'))return;
-      if(data.presets) localStorage.setItem('psos14Presets',JSON.stringify(data.presets));
-      if(data.pipeline) localStorage.setItem('psos14Pipeline',JSON.stringify(data.pipeline));
-      if(data.results) localStorage.setItem('psos14Results',JSON.stringify(data.results));
-      if(data.history) localStorage.setItem('psos14History',JSON.stringify(data.history));
+      if(data.presets) localStorage.setItem('psos20Presets',JSON.stringify(data.presets));
+      if(data.pipeline) localStorage.setItem('psos20Pipeline',JSON.stringify(data.pipeline));
+      if(data.results) localStorage.setItem('psos20Results',JSON.stringify(data.results));
+      if(data.history) localStorage.setItem('psos20History',JSON.stringify(data.history));
       renderPresets();renderPipeline();renderResults();renderHistory();refreshAnalytics();
-      alert('✓ Backup restaurado correctamente ('+new Date(data.date).toLocaleString()+')');
-    }catch(err){alert('Error al leer el backup: '+err.message);}
+      notify('✓ Backup restaurado correctamente ('+new Date(data.date).toLocaleString()+')');
+    }catch(err){notify('Error al leer el backup: '+err.message);}
   };
   reader.readAsText(file);
   input.value='';
@@ -2705,31 +2720,31 @@ function saveKeys(){
     gemini:el('keyGemini')?el('keyGemini').value.trim():'',
     openai:el('keyOpenAI')?el('keyOpenAI').value.trim():''
   };
-  sessionStorage.setItem('psv9SessionKeys',JSON.stringify(keys));
-  localStorage.setItem('psv9KeyPrefs',JSON.stringify({model:val('activeModel')}));
+  sessionStorage.setItem('psos20SessionKeys',JSON.stringify(keys));
+  localStorage.setItem('psos20KeyPrefs',JSON.stringify({model:val('activeModel')}));
   updateKeyStatus();
 }
 function loadKeys(){
   try{
     const legacy=JSON.parse(localStorage.getItem('psv9Keys')||'{}');
     if(legacy.anthropic||legacy.gemini||legacy.openai){
-      sessionStorage.setItem('psv9SessionKeys',JSON.stringify({anthropic:legacy.anthropic||'',gemini:legacy.gemini||'',openai:legacy.openai||''}));
+      sessionStorage.setItem('psos20SessionKeys',JSON.stringify({anthropic:legacy.anthropic||'',gemini:legacy.gemini||'',openai:legacy.openai||''}));
       localStorage.removeItem('psv9Keys');
     }
   }catch(e){}
   try{
-    const k=safeSessionJSON('psv9SessionKeys',{});
+    const k=safeSessionJSON('psos20SessionKeys',{});
     if(k.anthropic&&el('keyAnthropic')) el('keyAnthropic').value=k.anthropic;
     if(k.gemini&&el('keyGemini')) el('keyGemini').value=k.gemini;
     if(k.openai&&el('keyOpenAI')) el('keyOpenAI').value=k.openai;
-    const prefs=JSON.parse(localStorage.getItem('psv9KeyPrefs')||'{}');
+    const prefs=JSON.parse(localStorage.getItem('psos20KeyPrefs')||'{}');
     if(prefs.model&&el('activeModel')) el('activeModel').value=prefs.model;
   }catch(e){}
   updateKeyStatus();
 }
 function clearKeys(){
   if(!confirm('¿Borrar todas las API keys de esta sesión?'))return;
-  sessionStorage.removeItem('psv9SessionKeys');
+  sessionStorage.removeItem('psos20SessionKeys');
   localStorage.removeItem('psv9Keys');
   ['keyAnthropic','keyGemini','keyOpenAI'].forEach(id=>{if(el(id))el(id).value='';});
   updateKeyStatus();
@@ -2751,7 +2766,7 @@ function updateKeyStatus(){
   check('keyOpenAI','statusOpenAI');
 }
 function getKeys(){
-  return safeSessionJSON('psv9SessionKeys',{});
+  return safeSessionJSON('psos20SessionKeys',{});
 }
 function getActiveProvider(){
   const m=val('activeModel')||'anthropic|claude-sonnet-4-20250514';
@@ -2769,7 +2784,7 @@ async function callAI(systemPrompt,userPrompt){
   const {provider,model}=getActiveProvider();
   const keys=getKeys();
   const key=keys[provider]||'';
-  if(!key) throw new Error('No hay API key para '+provider+'. Añádela en el panel de keys.');
+  if(!key) throw new Error('No hay API key para '+provider+'. Añádela en Settings.');
 
   if(provider==='anthropic'){
     const r=await fetch('https://api.anthropic.com/v1/messages',{
@@ -2819,7 +2834,7 @@ function switchAIMode(mode,btn){
 /* ── AI ACTIONS ── */
 async function aiAction(mode){
   const key=getActiveKey();
-  if(!key){alert('Añade una API key en el panel de keys primero.');return;}
+  if(!key){notify('Añade una API key en Settings primero.');return;}
   const prompt=el('output')?el('output').value:'';
   const {provider,model}=getActiveProvider();
   const providerLabel=provider.charAt(0).toUpperCase()+provider.slice(1)+' · '+model;
@@ -2839,7 +2854,7 @@ async function aiAction(mode){
       sys='Eres un experto en prompt engineering para generadores de imagen de IA. Reescribes prompts de fotografía para maximizar su efectividad y coherencia. Devuelves SOLO el prompt mejorado, sin explicaciones adicionales, listo para copiar.';
       usr=`Mejora y optimiza este prompt de fotografía de moda:\n\n"${prompt}"\n\nMantén la esencia pero:\n- Mejora la coherencia visual\n- Añade detalles técnicos de calidad fotográfica\n- Elimina redundancias\n- Estructura para máxima efectividad en IA generativa\nDevuelve SOLO el prompt mejorado.`;
     } else if(mode==='sugerir'){
-      const presets=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
+      const presets=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
       const presetSummary=presets.slice(0,15).map(p=>`- ${p.name} (${p.state&&p.state.cat||'?'})`).join('\n');
       sys='Eres un analista creativo de sesiones fotográficas. Analizas colecciones de presets y sugieres nuevas combinaciones que amplíen la variedad. Responde en español con formato estructurado.';
       usr=`Analiza estos presets guardados:\n${presetSummary||'(sin presets aún)'}\n\nSugiere 4 NUEVAS IDEAS de preset que:\n1. Complementen lo existente\n2. Exploren ángulos no cubiertos\n3. Sean coherentes con el estilo (fotografía profesional general, con senior photography como especialidad)\n\nPara cada idea:\nTÍTULO: [nombre del preset]\nCATEGORÍA: [cotidiana/gala/lenceria/disfraz/banyo/deporte]\nCONCEPTO: [descripción en 2 líneas]\nPOR QUÉ: [razón para añadirlo a tu colección]`;
@@ -2874,7 +2889,7 @@ function renderSuggestions(text){
 
 function applyImprovedPrompt(){
   const content=el('aiRespContent-mejorar');
-  if(!content||!content.textContent.trim()){alert('Primero genera el prompt mejorado.');return;}
+  if(!content||!content.textContent.trim()){notify('Primero genera el prompt mejorado.');return;}
   const text=content.innerText||content.textContent;
   if(el('output')) el('output').value=text.trim();
   updateTokenCounter(text.trim());
@@ -2887,7 +2902,7 @@ async function sendChat(){
   const msg=inp?inp.value.trim():'';
   if(!msg)return;
   const key=getActiveKey();
-  if(!key){appendChatMsg('system','⚠ Añade una API key en el panel de keys para usar el chat.');return;}
+  if(!key){appendChatMsg('system','⚠ Añade una API key en Settings para usar el chat.');return;}
   inp.value='';
   appendChatMsg('user',msg);
   appendChatMsg('ai','<div class="ai-thinking"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>');
@@ -2982,16 +2997,16 @@ function appendChatMsg(role,html){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-function clearChat(){chatHistory=[];localStorage.removeItem('psos14Chat');const m=el('chatMessages');if(m)m.innerHTML='<div class="chat-msg system">Chat reiniciado. Describe la sesión fotográfica que imaginas.</div>';}
-function saveChatHistory(){try{localStorage.setItem('psos14Chat',JSON.stringify(chatHistory.slice(-20)));}catch(e){}}
-function loadChatHistory(){try{const saved=JSON.parse(localStorage.getItem('psos14Chat')||'[]');if(saved.length){chatHistory=saved;const m=el('chatMessages');if(m){saved.forEach(msg=>{appendChatMsg(msg.role==='user'?'user':'ai','[Sesión anterior] '+msg.content.substring(0,120)+'…');});}}}catch(e){}}
+function clearChat(){chatHistory=[];localStorage.removeItem('psos20Chat');const m=el('chatMessages');if(m)m.innerHTML='<div class="chat-msg system">Chat reiniciado. Describe la sesión fotográfica que imaginas.</div>';}
+function saveChatHistory(){try{localStorage.setItem('psos20Chat',JSON.stringify(chatHistory.slice(-20)));}catch(e){}}
+function loadChatHistory(){try{const saved=JSON.parse(localStorage.getItem('psos20Chat')||'[]');if(saved.length){chatHistory=saved;const m=el('chatMessages');if(m){saved.forEach(msg=>{appendChatMsg(msg.role==='user'?'user':'ai','[Sesión anterior] '+msg.content.substring(0,120)+'…');});}}}catch(e){}}
 
 /* ── ANALYTICS ── */
 function refreshAnalytics(){
-  const hist=JSON.parse(localStorage.getItem('psos14History')||'[]');
-  const presets=JSON.parse(localStorage.getItem('psos14Presets')||'[]');
-  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
-  const results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
+  const hist=JSON.parse(localStorage.getItem('psos20History')||'[]');
+  const presets=JSON.parse(localStorage.getItem('psos20Presets')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
+  const results=JSON.parse(localStorage.getItem('psos20Results')||'[]');
   const setN=(id,v)=>{const n=el(id);if(n)n.textContent=v};
   setN('statPrompts',hist.length);
   setN('statPresets',presets.length);
@@ -3014,43 +3029,43 @@ const PIPELINE_STAGES=['pending','generated','reviewed','published'];
 const STAGE_LABELS={pending:'Pendiente',generated:'Generado',reviewed:'Revisado',published:'Publicado'};
 function addToPipeline(){
   const prompt=el('output')?el('output').value:'';
-  if(!prompt){alert('Genera un prompt primero.');return;}
-  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
+  if(!prompt){notify('Genera un prompt primero.');return;}
+  const pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
   const name=prompt.substring(0,60)+'…';
   pipeline.unshift({id:Date.now(),name,prompt,stage:'pending',date:new Date().toISOString(),cat:activeCat,score:0});
-  localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline.slice(0,100)));
+  localStorage.setItem('psos20Pipeline',JSON.stringify(pipeline.slice(0,100)));
   renderPipeline();refreshAnalytics();
 }
 function advancePipeline(id){
-  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
   const item=pipeline.find(p=>p.id===id);
   if(!item)return;
   const idx=PIPELINE_STAGES.indexOf(item.stage);
   if(idx<PIPELINE_STAGES.length-1) item.stage=PIPELINE_STAGES[idx+1];
-  localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));
+  localStorage.setItem('psos20Pipeline',JSON.stringify(pipeline));
   renderPipeline();refreshAnalytics();
 }
 function deletePipeline(id){
-  let pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
+  let pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
   pipeline=pipeline.filter(p=>p.id!==id);
-  localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));
+  localStorage.setItem('psos20Pipeline',JSON.stringify(pipeline));
   renderPipeline();refreshAnalytics();
 }
 function setPipelineScore(id,score){
-  const pipeline=JSON.parse(localStorage.getItem('psos14Pipeline')||'[]');
+  const pipeline=JSON.parse(localStorage.getItem('psos20Pipeline')||'[]');
   const item=pipeline.find(p=>p.id===id);
-  if(item){item.score=score;localStorage.setItem('psos14Pipeline',JSON.stringify(pipeline));renderPipeline();}
+  if(item){item.score=score;localStorage.setItem('psos20Pipeline',JSON.stringify(pipeline));renderPipeline();}
 }
 function loadPipelinePrompt(id){
-  const pipeline=safeJSON('psos14Pipeline',[]);
+  const pipeline=safeJSON('psos20Pipeline',[]);
   const item=pipeline.find(p=>Number(p.id)===Number(id));
   if(!item)return;
   if(el('output')) el('output').value=String(item.prompt||'');
   updateTokenCounter(el('output').value);
 }
-function clearPipeline(){if(confirm('¿Vaciar todo el pipeline?')){localStorage.removeItem('psos14Pipeline');renderPipeline();refreshAnalytics();}}
+function clearPipeline(){if(confirm('¿Vaciar todo el pipeline?')){localStorage.removeItem('psos20Pipeline');renderPipeline();refreshAnalytics();}}
 function renderPipeline(){
-  const pipeline=safeJSON('psos14Pipeline',[]);
+  const pipeline=safeJSON('psos20Pipeline',[]);
   PIPELINE_STAGES.forEach(stage=>{
     const col=el('kCol-'+stage);
     const count=el('kCount-'+stage);
@@ -3088,31 +3103,31 @@ function saveResult(){
   const url=val('resultUrl');
   const notes=val('resultNotes');
   const prompt=el('output')?el('output').value:'';
-  if(!prompt&&!url){alert('Genera un prompt o añade una URL.');return;}
-  const results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
+  if(!prompt&&!url){notify('Genera un prompt o añade una URL.');return;}
+  const results=JSON.parse(localStorage.getItem('psos20Results')||'[]');
   results.unshift({id:Date.now(),prompt:prompt.substring(0,200),url,notes,score:currentResultStar,date:new Date().toISOString(),cat:activeCat});
-  localStorage.setItem('psos14Results',JSON.stringify(results.slice(0,200)));
+  localStorage.setItem('psos20Results',JSON.stringify(results.slice(0,200)));
   setResultStar(0);
   if(el('resultUrl'))el('resultUrl').value='';
   if(el('resultNotes'))el('resultNotes').value='';
   renderResults();refreshAnalytics();
 }
 function deleteResult(id){
-  let results=JSON.parse(localStorage.getItem('psos14Results')||'[]');
+  let results=JSON.parse(localStorage.getItem('psos20Results')||'[]');
   results=results.filter(r=>r.id!==id);
-  localStorage.setItem('psos14Results',JSON.stringify(results));
+  localStorage.setItem('psos20Results',JSON.stringify(results));
   renderResults();refreshAnalytics();
 }
-function resultById(id){return safeJSON('psos14Results',[]).find(r=>Number(r.id)===Number(id));}
+function resultById(id){return safeJSON('psos20Results',[]).find(r=>Number(r.id)===Number(id));}
 function openLightboxByResult(id){const r=resultById(id);if(r&&r.url)openLightbox(String(r.url));}
 function openResultURL(id){
   const r=resultById(id);if(!r||!r.url)return;
   const url=String(r.url);
   if(url.startsWith('data:image/')||url.startsWith('https://oaidalleapiprodscus')||url.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i)){openLightbox(url);return;}
   try{const u=new URL(url);if(['https:','http:'].includes(u.protocol))window.open(u.href,'_blank','noopener,noreferrer');}
-  catch(e){alert('URL no válida.');}
+  catch(e){notify('URL no válida.');}
 }
-function clearResults(){if(confirm('¿Borrar toda la biblioteca de resultados?')){localStorage.removeItem('psos14Results');renderResults();refreshAnalytics();}}
+function clearResults(){if(confirm('¿Borrar toda la biblioteca de resultados?')){localStorage.removeItem('psos20Results');renderResults();refreshAnalytics();}}
 
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -3140,4 +3155,74 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(n.tagName==='INPUT') n.addEventListener('input',scheduleLive);
   });
   generate();
+});
+
+
+
+function closeTransientUI(){
+  document.body.classList.remove('mobile-nav-open');
+  if(el('shareOverlay')) el('shareOverlay').classList.remove('open');
+  if(el('lightbox')) el('lightbox').classList.remove('open');
+  if(el('abOverlay')) el('abOverlay').classList.remove('open');
+  if(el('seqOverlay')) el('seqOverlay').classList.remove('open');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeTransientUI();});
+
+
+/* ══════════════════════════════════════════════════════════════
+   PHOTO STUDIO OS v2.0 — WORKSPACE SHELL / RELEASE UX
+   ══════════════════════════════════════════════════════════════ */
+const WORKSPACE_META={
+  dashboard:['PHOTO STUDIO OS / HOME','Dashboard'],
+  studio:['PHOTO STUDIO OS / CREATE','Studio'],
+  ai:['PHOTO STUDIO OS / ASSIST','AI Studio'],
+  production:['PHOTO STUDIO OS / ORGANIZE','Producción'],
+  library:['PHOTO STUDIO OS / CURATE','Biblioteca'],
+  settings:['PHOTO STUDIO OS / CONFIGURE','Settings']
+};
+function switchWorkspace(view,btn){
+  if(!WORKSPACE_META[view]) view='dashboard';
+  document.querySelectorAll('.workspace-view').forEach(v=>v.classList.toggle('active',v.dataset.workspace===view));
+  document.querySelectorAll('.workspace-link').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
+  const meta=WORKSPACE_META[view];
+  const eyebrow=el('workspaceEyebrow'), title=el('workspaceTitle');
+  if(eyebrow) eyebrow.textContent=meta[0];
+  if(title) title.textContent=meta[1];
+  document.body.dataset.workspace=view;
+  try{localStorage.setItem('psos20Workspace',view);}catch(e){}
+  document.body.classList.remove('mobile-nav-open');
+  if(view==='dashboard' || view==='production' || view==='library'){
+    try{refreshAnalytics();}catch(e){}
+  }
+  window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+function loadWorkspace(){
+  let view='dashboard';
+  try{view=localStorage.getItem('psos20Workspace')||'dashboard';}catch(e){}
+  switchWorkspace(WORKSPACE_META[view]?view:'dashboard');
+}
+function toggleMobileNav(){document.body.classList.toggle('mobile-nav-open');}
+function notify(message,type='info',timeout=2800){
+  const region=el('toastRegion');
+  if(!region) return;
+  const toast=document.createElement('div');
+  toast.className='toast toast-'+type;
+  const icon=type==='error'?'!':type==='success'?'✓':'•';
+  toast.innerHTML='<span class="toast-icon">'+icon+'</span><span></span>';
+  toast.lastElementChild.textContent=String(message);
+  region.appendChild(toast);
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  window.setTimeout(()=>{toast.classList.remove('show');window.setTimeout(()=>toast.remove(),220);},timeout);
+}
+function registerPWA(){
+  if(!('serviceWorker' in navigator)) return;
+  if(location.protocol!=='http:' && location.protocol!=='https:') return;
+  navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(err=>console.warn('[PWA] Service worker no registrado:',err));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  loadWorkspace();
+  registerPWA();
+  document.querySelectorAll('.dash-card[role="button"]').forEach(card=>card.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click();}
+  }));
 });

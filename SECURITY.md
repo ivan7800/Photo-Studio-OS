@@ -1,34 +1,18 @@
-# Security Policy — Photo Studio OS v1.3
+# Security Policy — Photo Studio OS v2.0
 
-## Modelo de seguridad
+Photo Studio OS es una aplicación frontend estática. No publica claves en el repositorio ni dispone de backend propio.
 
-Photo Studio OS v1.3 es una aplicación frontend estática. No incluye backend ni servidor propio.
+## Claves de API
 
-## API keys
-
-- Las keys se guardan en `sessionStorage`, no en `localStorage`.
-- Se eliminan al cerrar la sesión del navegador.
-- Cuando se usa una función IA, la key se envía directamente al proveedor elegido: OpenAI, Anthropic o Gemini.
-- Para uso público se recomienda usar keys con límite de gasto y rotación frecuente.
-
-## Recomendación para producto comercial
-
-La arquitectura más segura sería:
-
-```text
-Frontend estático → Backend/proxy serverless → Proveedor IA
-```
-
-Las keys deberían estar en variables de entorno del backend, nunca expuestas al navegador.
+- Se guardan en `sessionStorage` durante la sesión del navegador.
+- Se eliminan al borrar las claves o al terminar la sesión según el comportamiento del navegador.
+- Se recomienda usar claves restringidas y con límites de gasto.
+- Las peticiones salen directamente del navegador hacia el proveedor configurado.
 
 ## CSP
 
-La app usa CSP sin `unsafe-inline`:
+La aplicación usa una CSP que limita scripts/estilos al propio origen y conexiones a los endpoints de IA configurados.
 
-- JS externo en `assets/app.js`.
-- CSS externo en `assets/styles.css`.
-- Sin handlers inline tipo `onclick`.
+## Alcance
 
-## Adult-only
-
-La app bloquea edades menores de 18 y términos relacionados con menores. El objetivo es fotografía profesional de sujetos adultos.
+La arquitectura actual es adecuada para uso personal/prosumer con claves propias. Para un SaaS público con claves gestionadas por el servicio, se recomienda un backend/proxy con autenticación, rate limiting, rotación de secretos y observabilidad.
